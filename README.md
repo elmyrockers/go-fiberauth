@@ -1,3 +1,3 @@
-# gofiber-session-auth
+# gofiber-auth
 
-Session authentication middleware for Fiber microframework with support for any RDBMS, NoSQL, or caching backend, including custom ones.
+Session-based and JWT-based authentication middleware for Fiber microframework, with any RDBMS, NoSQL, or caching backend.
