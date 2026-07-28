@@ -5,7 +5,7 @@ All routes grouped under `/auth` prefix.
 ## Auth core
 | Method | Route           | Purpose            |
 |--------|-----------------|---------------------|
-| POST   | /auth/login     | Log in             |
+| POST   | /auth/login     | Log in (accepts optional `remember: bool`) |
 | POST   | /auth/logout    | Log out             |
 | POST   | /auth/register  | Register new user    |
 
@@ -46,19 +46,6 @@ All routes grouped under `/auth` prefix.
 **Total: 17 routes** (9 if skipping password confirmation + 2FA for v1)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 # Middleware Plan
 
 ## Middleware List
@@ -66,7 +53,7 @@ All routes grouped under `/auth` prefix.
 | # | Middleware                    | Purpose                                                                 |
 |---|---------------------------------|----------------------------------------------------------------------------|
 | 1 | GuestOnly                     | Blocks access if user is already logged in                              |
-| 2 | AuthRequired                   | Blocks access if user is not logged in                                    |
+| 2 | AuthRequired                   | Blocks access if not logged in; falls back to remember-token cookie (if present and valid) to re-establish a session before rejecting |
 | 3 | RateLimiter                    | Throttles requests (reusable, configurable per route: max + window)      |
 | 4 | RequiresTwoFactorPending        | Only allows access if login is mid-2FA-challenge (temp session state)     |
 | 5 | RequiresPasswordConfirmed       | Blocks sensitive actions unless password was recently re-confirmed        |
@@ -95,23 +82,6 @@ All routes grouped under `/auth` prefix.
 | POST /auth/2fa/recovery-codes       | AuthRequired, RequiresPasswordConfirmed, CSRF        |
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # Actions Plan
 
 Actions are methods on an `AuthActions` struct — business logic (DB/session
@@ -125,26 +95,27 @@ which only does gatekeeping (session reads, no DB access).
 | 1 | VerifyCredentials                | DB (read `users`)                  |
 | 2 | CreateSession                    | Session (write `user_id`)          |
 | 3 | CreatePendingTwoFactorSession      | Session (write `pending_2fa_user_id`) |
-| 4 | DestroySession                    | Session                             |
-| 5 | CreateUser                        | DB (write `users`)                  |
-| 6 | GenerateToken                     | DB (write `tokens`)                  |
-| 7 | VerifyToken                       | DB (read `tokens`)                   |
-| 8 | UpdatePassword (via reset token)  | DB (write `users`)                   |
-| 9 | UpdatePasswordAuthenticated       | DB (read+write `users`) — verifies current password before writing new one |
-| 10| UpdateProfileInfo                 | DB (write `users`) — name/email; if email changes, clears `email_verified_at` and triggers reverification |
-| 11| MarkEmailVerified                 | DB (write `users`)                    |
-| 12| ConfirmPassword                   | DB (read `users`) + Session (write `confirmed_at`) |
-| 13| GenerateTotpSecret                | DB (write `users`, unconfirmed)       |
-| 14| VerifyTotpCode                    | DB (read secret)                      |
-| 15| EnableTwoFactor                   | DB (write `users`)                    |
-| 16| DisableTwoFactor                  | DB (write `users`)                    |
-| 17| GenerateRecoveryCodes             | DB (write `users`)                     |
+| 4 | CreateRememberToken               | DB (write `users.remember_token`) + sets long-lived remember cookie (separate from session cookie) |
+| 5 | DestroySession                    | Session (+ clears remember token/cookie on explicit logout) |
+| 6 | CreateUser                        | DB (write `users`)                  |
+| 7 | GenerateToken                     | DB (write `tokens`)                  |
+| 8 | VerifyToken                       | DB (read `tokens`)                   |
+| 9 | UpdatePassword (via reset token)  | DB (write `users`)                   |
+| 10| UpdatePasswordAuthenticated       | DB (read+write `users`) — verifies current password before writing new one |
+| 11| UpdateProfileInfo                 | DB (write `users`) — name/email; if email changes, clears `email_verified_at` and triggers reverification |
+| 12| MarkEmailVerified                 | DB (write `users`)                    |
+| 13| ConfirmPassword                   | DB (read `users`) + Session (write `confirmed_at`) |
+| 14| GenerateTotpSecret                | DB (write `users`, unconfirmed)       |
+| 15| VerifyTotpCode                    | DB (read secret)                      |
+| 16| EnableTwoFactor                   | DB (write `users`)                    |
+| 17| DisableTwoFactor                  | DB (write `users`)                    |
+| 18| GenerateRecoveryCodes             | DB (write `users`)                     |
 
 ## Handler → Action Mapping
 
 | Handler                | Actions called                                              |
 |---------------------------|------------------------------------------------------------------|
-| Login                   | VerifyCredentials → CreateSession (or CreatePendingTwoFactorSession if 2FA enabled) |
+| Login                   | VerifyCredentials → CreateSession (or CreatePendingTwoFactorSession if 2FA enabled) → CreateRememberToken (if `remember=true`) |
 | Logout                  | DestroySession                                                    |
 | Register                | CreateUser → CreateSession                                        |
 | UpdateProfile           | UpdateProfileInfo (→ GenerateToken + send email if email changed) |
@@ -157,18 +128,13 @@ which only does gatekeeping (session reads, no DB access).
 | Enable2FA                | GenerateTotpSecret                                                |
 | Confirm2FA               | VerifyTotpCode → EnableTwoFactor → GenerateRecoveryCodes           |
 | Disable2FA               | DisableTwoFactor                                                  |
-| Challenge2FA (login)     | VerifyTotpCode → CreateSession                                    |
+| Challenge2FA (login)     | VerifyTotpCode → CreateSession → CreateRememberToken (if `remember=true`) |
 | RecoveryCodes (regen)    | GenerateRecoveryCodes                                              |
 
-**Total: 17 distinct actions**, some reused across multiple handlers
+**Total: 18 distinct actions**, some reused across multiple handlers
 (e.g. `CreateSession` used by both Login and 2FA Challenge; `VerifyTotpCode`
-used by both 2FA Confirm and 2FA Challenge; `UpdatePassword` used by both
-the reset-token flow and, indirectly, `UpdatePasswordAuthenticated` if you
-choose to have the latter call into the former after verifying the current
-password).
-
-
-
+used by both 2FA Confirm and 2FA Challenge; `CreateRememberToken` used by
+both Login and 2FA Challenge when `remember=true`).
 
 
 # Database Table
@@ -181,6 +147,7 @@ CREATE TABLE users (
     email                       VARCHAR(255) NOT NULL UNIQUE,
     email_verified_at           TIMESTAMPTZ,
     password                    VARCHAR(255) NOT NULL,
+    remember_token              VARCHAR(100),
     two_factor_secret           TEXT,           -- encrypted
     two_factor_recovery_codes   TEXT,           -- JSON array, hashed entries
     two_factor_confirmed_at     TIMESTAMPTZ,
