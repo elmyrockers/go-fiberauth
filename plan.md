@@ -171,7 +171,7 @@ CREATE TABLE tokens (
 CREATE INDEX idx_tokens_user_id ON tokens(user_id);
 CREATE INDEX idx_tokens_hash_purpose ON tokens(token_hash, purpose);
 
--- sessions (only needed if you're NOT using Fiber's in-memory/Redis session store as-is)
+-- sessions (only needed if we're NOT using Fiber's in-memory/Redis session store as-is)
 CREATE TABLE sessions (
     id                  VARCHAR(255) PRIMARY KEY,
     user_id             UUID REFERENCES users(id) ON DELETE CASCADE,  -- nullable: pending-2FA sessions
