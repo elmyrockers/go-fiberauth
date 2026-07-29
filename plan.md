@@ -84,7 +84,7 @@ All routes grouped under `/auth` prefix.
 
 # Actions Plan
 
-Actions are methods on an `AuthActions` struct — business logic (DB/session
+Actions are methods on the `Auth` struct — business logic (DB/session
 writes), called from inside handlers. Not to be confused with middleware,
 which only does gatekeeping (session reads, no DB access).
 
@@ -184,4 +184,125 @@ CREATE TABLE sessions (
 
 CREATE INDEX idx_sessions_user_id ON sessions(user_id);
 CREATE INDEX idx_sessions_expires_at ON sessions(expires_at);
+```
+
+
+# Package Plan
+
+```
+Package: session
+Struct: Auth
+Constructor: New() function
+Actions: Auth methods
+            - Middleware:
+                - list of middleware
+            - Service:
+                - list of actions
+```
+
+## Usage
+
+```go
+import (
+    "github.com/gofiber/fiber/v3"
+    fiberauth "github.com/elmyrockers/gofiber-auth/session"
+    "app/controller"
+)
+
+func main() {
+    auth := fiberauth.New()
+    authController := controller.NewAuth(auth)
+
+    app := fiber.New()
+
+    app.Post("/auth/register", auth.GuestOnly, auth.RateLimiter(5, time.Minute), authController.register)
+    app.Post("/auth/login", auth.GuestOnly, auth.RateLimiter(5, time.Minute), authController.login)
+    app.Post("/auth/logout", auth.AuthRequired, authController.logout)
+
+    app.Put("/auth/profile", auth.AuthRequired, authController.updateProfile)
+    app.Put("/auth/password", auth.AuthRequired, auth.RequiresPasswordConfirmed, authController.updatePassword)
+
+    app.Post("/auth/forgot-password", auth.GuestOnly, auth.RateLimiter(3, time.Hour), authController.forgotPassword)
+    app.Post("/auth/reset-password", auth.GuestOnly, authController.resetPassword)
+
+    app.Post("/auth/email/verify-send", auth.AuthRequired, auth.RateLimiter(3, time.Hour), authController.emailVerifySend)
+    app.Get("/auth/email/verify/:id/:token", authController.emailVerify)
+
+    app.Get("/auth/password/confirm-status", auth.AuthRequired, authController.passwordConfirmStatus)
+    app.Post("/auth/password/confirm", auth.AuthRequired, authController.passwordConfirm)
+
+    app.Post("/auth/2fa/enable", auth.AuthRequired, auth.RequiresPasswordConfirmed, authController.enable2FA)
+    app.Post("/auth/2fa/confirm", auth.AuthRequired, authController.confirm2FA)
+    app.Post("/auth/2fa/disable", auth.AuthRequired, auth.RequiresPasswordConfirmed, authController.disable2FA)
+    app.Post("/auth/2fa/challenge", auth.RequiresTwoFactorPending, auth.RateLimiter(5, time.Minute), authController.challenge2FA)
+    app.Get("/auth/2fa/recovery-codes", auth.AuthRequired, authController.recoveryCodes)
+    app.Post("/auth/2fa/recovery-codes", auth.AuthRequired, auth.RequiresPasswordConfirmed, authController.regenerateRecoveryCodes)
+
+    app.Listen(":3000")
+}
+```
+
+## Controller → Action mapping
+
+```
+authController.register:
+    - calls auth.CreateUser(...)
+    - calls auth.CreateSession(...)
+
+authController.login:
+    - calls auth.VerifyCredentials(...)
+    - calls auth.CreateSession(...) or auth.CreatePendingTwoFactorSession(...)
+    - calls auth.CreateRememberToken(...) if remember=true
+
+authController.logout:
+    - calls auth.DestroySession(...)
+
+authController.updateProfile:
+    - calls auth.UpdateProfileInfo(...)
+    - calls auth.GenerateToken(...) + sends email if email changed
+
+authController.updatePassword:
+    - calls auth.UpdatePasswordAuthenticated(...)
+
+authController.forgotPassword:
+    - calls auth.GenerateToken(...)
+
+authController.resetPassword:
+    - calls auth.VerifyToken(...)
+    - calls auth.UpdatePassword(...)
+
+authController.emailVerifySend:
+    - calls auth.GenerateToken(...)
+
+authController.emailVerify:
+    - calls auth.VerifyToken(...)
+    - calls auth.MarkEmailVerified(...)
+
+authController.passwordConfirmStatus:
+    - reads session state directly (no action needed — just checks confirmed_at)
+
+authController.passwordConfirm:
+    - calls auth.ConfirmPassword(...)
+
+authController.enable2FA:
+    - calls auth.GenerateTotpSecret(...)
+
+authController.confirm2FA:
+    - calls auth.VerifyTotpCode(...)
+    - calls auth.EnableTwoFactor(...)
+    - calls auth.GenerateRecoveryCodes(...)
+
+authController.disable2FA:
+    - calls auth.DisableTwoFactor(...)
+
+authController.challenge2FA:
+    - calls auth.VerifyTotpCode(...)
+    - calls auth.CreateSession(...)
+    - calls auth.CreateRememberToken(...) if remember=true
+
+authController.recoveryCodes:
+    - reads recovery codes directly from DB (read-only, no action needed)
+
+authController.regenerateRecoveryCodes:
+    - calls auth.GenerateRecoveryCodes(...)
 ```
