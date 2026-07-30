@@ -205,7 +205,7 @@ Actions: Auth methods
 ```go
 import (
     "github.com/gofiber/fiber/v3"
-    fiberauth "github.com/elmyrockers/gofiber-auth/session"
+    fiberauth "github.com/elmyrockers/go-fiberauth/session"
     "app/controller"
 )
 
