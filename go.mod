@@ -1,3 +1,3 @@
-module github.com/elmyrockers/gofiber-auth
+module github.com/elmyrockers/go-fiberauth
 
 go 1.26.5
