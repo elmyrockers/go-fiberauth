@@ -55,7 +55,7 @@ type PasswordResetToken interface {
 	SetUsedAt(t *time.Time)
 }
 
-type Database interface {
+type DatabaseAdapter interface {
 	// User
 	FindUserByEmail(email string) (User, error)
 	FindUserByID(id string) (User, error)
@@ -70,4 +70,3 @@ type Database interface {
 	// Cleanup
 	DeleteExpiredPasswordResetTokens() error
 }
-
