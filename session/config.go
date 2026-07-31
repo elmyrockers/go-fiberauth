@@ -6,4 +6,6 @@ import (
 
 type Config struct {
 	SessionConfig session.Config
+	DatabaseAdapter Database
+	MailAdapter Mail
 }
