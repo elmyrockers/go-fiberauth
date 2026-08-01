@@ -1,6 +1,7 @@
 package session
 
 import (
+	"fmt"
 	"github.com/gofiber/fiber/v3"
 	fibersession "github.com/gofiber/fiber/v3/middleware/session"
 
@@ -43,11 +44,12 @@ func wantsJSON(c fiber.Ctx) bool {
 
 // Redirects user to login url if unauthenticated
 func (a *Auth) unauthenticated(c fiber.Ctx) error {
-	if wantsJSON(c) {
-		return fiber.ErrUnauthorized
-	}
-
-	return c.Redirect().To(a.loginURL)
+    if wantsJSON(c) {
+        return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+            "message": "Unauthenticated.",
+        })
+    }
+    return c.Redirect().To(a.loginURL)
 }
 
 // MIDDLEWARE ----------------------------------------------------------------------
