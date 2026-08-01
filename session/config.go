@@ -20,4 +20,5 @@ type Config struct {
 	DatabaseAdapter DatabaseAdapter
 	MailAdapter MailAdapter
 	MailConfig MailConfig
+	LoginUrl string
 }
