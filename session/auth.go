@@ -43,12 +43,12 @@ func wantsJSON(c fiber.Ctx) bool {
 
 // Redirects user to login url if unauthenticated
 func (a *Auth) unauthenticated(c fiber.Ctx) error {
-    if wantsJSON(c) {
-        return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-            "message": "Unauthenticated.",
-        })
-    }
-    return c.Redirect().To(a.loginURL)
+	if wantsJSON(c) {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Unauthenticated.",
+		})
+	}
+	return c.Redirect().To(a.loginURL)
 }
 
 // MIDDLEWARE ----------------------------------------------------------------------
@@ -66,4 +66,17 @@ func (a *Auth) AuthRequired(c fiber.Ctx) error {
 }
 
 
-// ---------------------------------------------------------------------------------
+// ACTIONS --------------------------------------------------------------------------
+func (a *Auth) CreateSession(c fiber.Ctx, userID string) error {
+	// Get session store and regenerate session id
+		sess, err := a.sessionStore.Get(c)
+		if err != nil { return err }
+
+		if err := sess.Regenerate(); err != nil { return err }
+
+	// Store user_id into session
+		sess.Set("user_id", userID)
+		sess.Delete("pending_2fa_user_id")
+
+	return sess.Save()
+}
