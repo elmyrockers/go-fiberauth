@@ -12,7 +12,7 @@ type Auth struct {
 	sessionStore *fibersession.Store
 	dbAdapter DatabaseAdapter
 	mailAdapter MailAdapter
-	loginUrl string
+	loginURL string
 }
 
 func New(config ...Config) *Auth {
@@ -22,7 +22,7 @@ func New(config ...Config) *Auth {
 
 	// Set up Auth attributes, then return it
 		loginURL := cfg.LoginURL
-		if loginURL == nil { loginURL = "/auth/login" }
+		if loginURL == "" { loginURL = "/auth/login" }
 
 		session := fibersession.NewStore( cfg.SessionConfig )
 		return &Auth{
@@ -33,13 +33,21 @@ func New(config ...Config) *Auth {
 		}
 }
 
+// HELPER -------------------------------------------------------------------------
+func wantsJSON(c fiber.Ctx) bool {
+	if c.Get("X-Requested-With") == "XMLHttpRequest" {
+		return true
+	}
+	return c.Accepts("html", "json") == "json"
+}
+
 // Redirects user to login url if unauthenticated
 func (a *Auth) unauthenticated(c fiber.Ctx) error {
-	if c.Accepts("json") == "json" {
+	if wantsJSON(c) {
 		return fiber.ErrUnauthorized
 	}
 
-	return c.Redirect(a.LoginURL)
+	return c.Redirect().To(a.loginURL)
 }
 
 // MIDDLEWARE ----------------------------------------------------------------------
