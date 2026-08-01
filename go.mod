@@ -3,10 +3,14 @@ module github.com/elmyrockers/go-fiberauth
 go 1.26.5
 
 require (
+	github.com/CloudyKit/fastprinter v0.0.0-20251202014920-1725d2651bd4 // indirect
+	github.com/CloudyKit/jet/v6 v6.3.2 // indirect
 	github.com/andybalholm/brotli v1.2.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gofiber/fiber/v3 v3.4.0 // indirect
 	github.com/gofiber/schema v1.8.3 // indirect
+	github.com/gofiber/template/jet/v3 v3.0.7 // indirect
+	github.com/gofiber/template/v2 v2.1.0 // indirect
 	github.com/gofiber/utils/v2 v2.4.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/klauspost/compress v1.19.1 // indirect
