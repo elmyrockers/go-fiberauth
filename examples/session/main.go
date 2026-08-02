@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/csrf"
 	"github.com/gofiber/template/jet/v3"
 	fiberauth "github.com/elmyrockers/go-fiberauth/session"
 
@@ -22,11 +23,13 @@ func main(){
 
 	engine := jet.New( "views", ".jet" )
 	app := fiber.New(fiber.Config{ Views: engine })
+	app.Use(csrf.New())
 
 
-	app.Get("/auth/login", authController.Login )
-	app.Get("/auth/register", authController.Register )
-	app.Get("/auth/forgot-password", authController.ForgotPassword )
+	app.Get("/auth/login", authController.LoginPage )
+	app.Get("/auth/register", authController.RegisterPage )
+	app.Get("/auth/forgot-password", authController.ForgotPasswordPage )
+	app.Get("/auth/reset-password", authController.ResetPasswordPage )
 
 
 
