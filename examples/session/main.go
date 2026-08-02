@@ -26,6 +26,7 @@ func main(){
 
 	app.Get("/auth/login", authController.Login )
 	app.Get("/auth/register", authController.Register )
+	app.Get("/auth/forgot-password", authController.ForgotPassword )
 
 
 
