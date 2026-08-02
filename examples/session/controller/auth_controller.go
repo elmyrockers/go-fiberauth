@@ -17,5 +17,7 @@ func (ac *AuthController) Register(c fiber.Ctx) error {
 }
 
 func (ac *AuthController) Login(c fiber.Ctx) error {
-	return nil
+	return c.Render("login", fiber.Map{
+				"Title": "Login Form",
+			})
 }
