@@ -215,28 +215,44 @@ func main() {
 
     app := fiber.New()
 
-    app.Post("/auth/register", auth.GuestOnly, auth.RateLimiter(5, time.Minute), authController.register)
-    app.Post("/auth/login", auth.GuestOnly, auth.RateLimiter(5, time.Minute), authController.login)
-    app.Post("/auth/logout", auth.AuthRequired, authController.logout)
+    // Auth pages
+        app.Get("/auth/login", auth.GuestOnly, authController.loginPage)
+        app.Get("/auth/register", auth.GuestOnly, authController.registerPage)
+        app.Get("/auth/forgot-password", auth.GuestOnly, authController.forgotPasswordPage)
+        app.Get("/auth/reset-password", auth.GuestOnly, authController.resetPasswordPage)
 
-    app.Put("/auth/profile", auth.AuthRequired, authController.updateProfile)
-    app.Put("/auth/password", auth.AuthRequired, auth.RequiresPasswordConfirmed, authController.updatePassword)
+    // Authentication
+        app.Post("/auth/register", auth.GuestOnly, auth.RateLimiter(5, time.Minute), authController.register)
+        app.Post("/auth/login", auth.GuestOnly, auth.RateLimiter(5, time.Minute), authController.login)
+        app.Post("/auth/logout", auth.AuthRequired, authController.logout)
 
-    app.Post("/auth/forgot-password", auth.GuestOnly, auth.RateLimiter(3, time.Hour), authController.forgotPassword)
-    app.Post("/auth/reset-password", auth.GuestOnly, authController.resetPassword)
+    // Profile & password
+        app.Put("/auth/profile", auth.AuthRequired, authController.updateProfile)
+        app.Put("/auth/password", auth.AuthRequired, auth.RequiresPasswordConfirmed, authController.updatePassword)
 
-    app.Post("/auth/email/verify-send", auth.AuthRequired, auth.RateLimiter(3, time.Hour), authController.emailVerifySend)
-    app.Get("/auth/email/verify/:id/:token", authController.emailVerify)
+    // Password reset
+        app.Post("/auth/forgot-password", auth.GuestOnly, auth.RateLimiter(3, time.Hour), authController.forgotPassword)
+        app.Post("/auth/reset-password", auth.GuestOnly, authController.resetPassword)
 
-    app.Get("/auth/password/confirm-status", auth.AuthRequired, authController.passwordConfirmStatus)
-    app.Post("/auth/password/confirm", auth.AuthRequired, authController.passwordConfirm)
+    // Email verification
+        app.Post("/auth/email/verify-send", auth.AuthRequired, auth.RateLimiter(3, time.Hour), authController.emailVerifySend)
+        app.Get("/auth/email/verify", authController.emailVerify)
 
-    app.Post("/auth/2fa/enable", auth.AuthRequired, auth.RequiresPasswordConfirmed, authController.enable2FA)
-    app.Post("/auth/2fa/confirm", auth.AuthRequired, authController.confirm2FA)
-    app.Post("/auth/2fa/disable", auth.AuthRequired, auth.RequiresPasswordConfirmed, authController.disable2FA)
-    app.Post("/auth/2fa/challenge", auth.RequiresTwoFactorPending, auth.RateLimiter(5, time.Minute), authController.challenge2FA)
-    app.Get("/auth/2fa/recovery-codes", auth.AuthRequired, authController.recoveryCodes)
-    app.Post("/auth/2fa/recovery-codes", auth.AuthRequired, auth.RequiresPasswordConfirmed, authController.regenerateRecoveryCodes)
+    // Password confirmation
+        app.Get("/auth/password/confirm", auth.AuthRequired, authController.passwordConfirmPage)
+        app.Get("/auth/password/confirm-status", auth.AuthRequired, authController.passwordConfirmStatus)
+        app.Post("/auth/password/confirm", auth.AuthRequired, authController.passwordConfirm)
+
+    // Two-factor authentication
+        app.Get("/auth/2fa/challenge", auth.RequiresTwoFactorPending, authController.challengePage)
+
+        app.Post("/auth/2fa/enable", auth.AuthRequired, auth.RequiresPasswordConfirmed, authController.enable2FA)
+        app.Post("/auth/2fa/confirm", auth.AuthRequired, authController.confirm2FA)
+        app.Post("/auth/2fa/disable", auth.AuthRequired, auth.RequiresPasswordConfirmed, authController.disable2FA)
+        app.Post("/auth/2fa/challenge", auth.RequiresTwoFactorPending, auth.RateLimiter(5, time.Minute), authController.challenge2FA)
+
+        app.Get("/auth/2fa/recovery-codes", auth.AuthRequired, authController.recoveryCodes)
+        app.Post("/auth/2fa/recovery-codes", auth.AuthRequired, auth.RequiresPasswordConfirmed, authController.regenerateRecoveryCodes)
 
     app.Listen(":3000")
 }
