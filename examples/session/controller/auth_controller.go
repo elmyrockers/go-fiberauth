@@ -21,3 +21,9 @@ func (ac *AuthController) Login(c fiber.Ctx) error {
 				"Title": "Login Form",
 			})
 }
+
+func (ac *AuthController) ForgotPassword(c fiber.Ctx) error {
+	return c.Render("forgot-password", fiber.Map{
+				"Title": "Forgot Password Form",
+			})
+}
