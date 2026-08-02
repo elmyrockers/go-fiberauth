@@ -20,7 +20,7 @@
         </p>
 
         <form method="POST" action="/auth/register" class="grid grid-cols-2 gap-5">
-
+            <input type="hidden" name="_csrf" value="{{ csrf }}">
             <div>
                 <label for="name" class="mb-2 block text-sm font-medium">
                     Name
