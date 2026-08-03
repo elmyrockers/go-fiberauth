@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/csrf"
+	"github.com/gofiber/fiber/v3/extractors"
 	"github.com/gofiber/template/jet/v3"
 	fiberauth "github.com/elmyrockers/go-fiberauth/session"
 
@@ -23,7 +24,9 @@ func main(){
 
 	engine := jet.New( "views", ".jet" )
 	app := fiber.New(fiber.Config{ Views: engine })
-	app.Use(csrf.New())
+	app.Use(csrf.New(csrf.Config{
+		Extractor: extractors.FromForm("_csrf"),
+	}))
 
 
 	app.Get("/auth/login", authController.LoginPage )
@@ -33,8 +36,13 @@ func main(){
 
 
 
-	// app.Post("/auth/login", authController.Login)
-	// app.Get("/member/index", auth.AuthRequired, Hello)
+	app.Post("/auth/login", authController.Login)
+	app.Post("/auth/register", authController.Register)
+	app.Post("/auth/forgot-password", authController.ForgotPassword )
+
+
+
+	app.Get("/member/index", auth.AuthRequired, Hello)
 	// app.Post("/auth/register", auth.GuestOnly, auth.RateLimiter(5, time.Minute), authController.register )
 
 
