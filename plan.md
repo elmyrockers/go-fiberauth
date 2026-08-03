@@ -214,6 +214,7 @@ func main() {
     authController := controller.NewAuth(auth)
 
     app := fiber.New()
+    app.Use(csrf.New())
 
     // Auth pages
         app.Get("/auth/login", auth.GuestOnly, authController.loginPage)
