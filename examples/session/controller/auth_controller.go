@@ -55,6 +55,23 @@ func (ac *AuthController) TwoFactorAuthChallengePage(c fiber.Ctx) error {
 			})
 }
 
+func (ac *AuthController) TwoFactorAuthRecoveryCodesPage(c fiber.Ctx) error {
+	return c.Render("2fa-recovery-codes", fiber.Map{
+				"Title": "2FA Recovery Codes Form",
+				"csrf": csrf.TokenFromContext(c),
+				"codes": []string{
+					"A1BC-DEFG",
+					"H2IJ-KLMN",
+					"OPQR-STUV",
+					"WXYZ-1234",
+					"5678-90AB",
+					"CDEF-GHIJ",
+					"KLMN-OPQR",
+					"STUV-WXYZ",
+				},
+			})
+}
+
 // HTTP METHOD: POST, PUT
 func (ac *AuthController) Register(c fiber.Ctx) error {
 	// return c.Redirect().To( "/auth/register" )
