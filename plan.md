@@ -180,34 +180,34 @@ Actions are methods on the `Auth` struct — containing business logic (DB/sessi
 **Total: 27 distinct actions**
 
 
-# Controller → Action Mapping
+# Handler → Action Mapping
 
-Controllers act as the HTTP layer: they extract request inputs, validate them, call the corresponding `Auth` actions, and return HTTP responses (JSON or redirects).
+Handlers act as the HTTP layer: they extract request inputs, validate them, call the corresponding `Auth` actions, and return HTTP responses (JSON or redirects).
 
-| Controller / Handler | Actions Called |
+| Handler | Actions Called |
 |-------------------------------------|------------------------------------------------------------------|
-| **LoginController** (POST) | `VerifyCredentials` → `CreateSession` (or `CreatePendingTwoFactorSession`) → `CreateRememberToken` |
-| **LogoutController** (POST) | `DestroySession` |
-| **RegisterController** (POST) | `CreateUser` → `CreateSession` |
-| **ProfileController** (PUT) | `UpdateProfileInfo` |
-| **PasswordController** (PUT) | `UpdatePasswordAuthenticated` |
-| **ForgotPasswordController** (POST) | `GeneratePasswordResetToken` |
-| **ResetPasswordController** (POST) | `VerifyPasswordResetToken` → `UpdatePassword` |
-| **EmailVerificationController** (POST) | `SendEmailVerificationNotification` |
-| **EmailVerificationController** (GET) | `VerifyEmailTokenAndMarkVerified` |
-| **ConfirmPasswordController** (POST) | `ConfirmPassword` |
-| **TwoFactorEnableController** (POST) | `GenerateTotpSecret` |
-| **TwoFactorConfirmController** (POST) | `VerifyTotpCode` → `EnableTwoFactor` → `GenerateRecoveryCodes` |
-| **TwoFactorDisableController** (POST) | `DisableTwoFactor` |
-| **TwoFactorChallengeController** (POST) | `VerifyTotpCode` (or `VerifyRecoveryCode`) → `CreateSession` → `CreateRememberToken` |
-| **RecoveryCodesController** (GET) | *(None - reads existing recovery codes from DB)* |
-| **RecoveryCodesController** (POST) | `GenerateRecoveryCodes` |
-| **PasskeyRegisterOptionsController** (POST) | `GeneratePasskeyRegistrationOptions` |
-| **PasskeyRegisterController** (POST) | `StorePasskey` |
-| **PasskeyRenameController** (PATCH) | `UpdatePasskeyName` |
-| **PasskeyLoginOptionsController** (POST) | `GeneratePasskeyLoginOptions` |
-| **PasskeyLoginController** (POST) | `VerifyPasskeyLogin` → `CreateSession` → `CreateRememberToken` |
-| **PasskeyDeleteController** (DELETE) | `DeletePasskey` |
+| **LoginHandler** (POST) | `VerifyCredentials` → `CreateSession` (or `CreatePendingTwoFactorSession`) → `CreateRememberToken` |
+| **LogoutHandler** (POST) | `DestroySession` |
+| **RegisterHandler** (POST) | `CreateUser` → `CreateSession` |
+| **ProfileHandler** (PUT) | `UpdateProfileInfo` |
+| **PasswordHandler** (PUT) | `UpdatePasswordAuthenticated` |
+| **ForgotPasswordHandler** (POST) | `GeneratePasswordResetToken` |
+| **ResetPasswordHandler** (POST) | `VerifyPasswordResetToken` → `UpdatePassword` |
+| **EmailVerificationHandler** (POST) | `SendEmailVerificationNotification` |
+| **EmailVerificationHandler** (GET) | `VerifyEmailTokenAndMarkVerified` |
+| **ConfirmPasswordHandler** (POST) | `ConfirmPassword` |
+| **TwoFactorEnableHandler** (POST) | `GenerateTotpSecret` |
+| **TwoFactorConfirmHandler** (POST) | `VerifyTotpCode` → `EnableTwoFactor` → `GenerateRecoveryCodes` |
+| **TwoFactorDisableHandler** (POST) | `DisableTwoFactor` |
+| **TwoFactorChallengeHandler** (POST) | `VerifyTotpCode` (or `VerifyRecoveryCode`) → `CreateSession` → `CreateRememberToken` |
+| **RecoveryCodesHandler** (GET) | *(None - reads existing recovery codes from DB)* |
+| **RecoveryCodesHandler** (POST) | `GenerateRecoveryCodes` |
+| **PasskeyRegisterOptionsHandler** (POST) | `GeneratePasskeyRegistrationOptions` |
+| **PasskeyRegisterHandler** (POST) | `StorePasskey` |
+| **PasskeyRenameHandler** (PATCH) | `UpdatePasskeyName` |
+| **PasskeyLoginOptionsHandler** (POST) | `GeneratePasskeyLoginOptions` |
+| **PasskeyLoginHandler** (POST) | `VerifyPasskeyLogin` → `CreateSession` → `CreateRememberToken` |
+| **PasskeyDeleteHandler** (DELETE) | `DeletePasskey` |
 
 
 # Database Table
