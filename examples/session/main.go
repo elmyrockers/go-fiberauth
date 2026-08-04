@@ -34,8 +34,9 @@ func main(){
 		app.Get("/auth/forgot-password", authController.ForgotPasswordPage )
 		app.Get("/auth/reset-password", authController.ResetPasswordPage )
 		app.Get("/auth/password/confirm", authController.PasswordConfirmationPage )
-		app.Get("/auth/2fa/challenge", authController.TwoFactorAuthChallengePage )
 		app.Get("/auth/2fa/recovery-codes", authController.TwoFactorAuthRecoveryCodesPage )
+		app.Get("/auth/2fa/challenge", authController.TwoFactorAuthChallengePage )
+		
 
 
 
