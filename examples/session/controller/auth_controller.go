@@ -41,6 +41,20 @@ func (ac *AuthController) ResetPasswordPage(c fiber.Ctx) error {
 			})
 }
 
+func (ac *AuthController) PasswordConfirmationPage(c fiber.Ctx) error {
+	return c.Render("password-confirmation", fiber.Map{
+				"Title": "Password Confirmation Form",
+				"csrf": csrf.TokenFromContext(c),
+			})
+}
+
+func (ac *AuthController) TwoFactorAuthChallengePage(c fiber.Ctx) error {
+	return c.Render("2fa-challenge", fiber.Map{
+				"Title": "2FA Challenge Form",
+				"csrf": csrf.TokenFromContext(c),
+			})
+}
+
 // HTTP METHOD: POST, PUT
 func (ac *AuthController) Register(c fiber.Ctx) error {
 	// return c.Redirect().To( "/auth/register" )
