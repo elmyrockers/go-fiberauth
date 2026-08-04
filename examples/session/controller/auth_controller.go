@@ -14,7 +14,6 @@ func NewAuth() *AuthController {
 // HTTP METHOD: GET
 func (ac *AuthController) RegisterPage(c fiber.Ctx) error {
 	return c.Render("register", fiber.Map{
-				"Title": "Register Form",
 				"csrf": csrf.TokenFromContext(c),
 			})
 }
