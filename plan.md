@@ -256,3 +256,72 @@ Controllers act as the HTTP layer: they extract request inputs, validate them, c
 | **PasskeyLoginOptionsController** (POST) | `GeneratePasskeyLoginOptions` |
 | **PasskeyLoginController** (POST) | `VerifyPasskeyLogin` → `CreateSession` → `CreateRememberToken` |
 | **PasskeyDeleteController** (DELETE) | `DeletePasskey` |
+
+## Usage
+
+```go
+import (
+    "time"
+    "github.com/gofiber/fiber/v3"
+    "github.com/gofiber/fiber/v3/middleware/csrf"
+    fiberauth "github.com/elmyrockers/go-fiberauth/session"
+    "app/controller"
+)
+
+func main() {
+    auth := fiberauth.New()
+    authController := controller.NewAuth(auth)
+
+    app := fiber.New()
+    app.Use(csrf.New())
+
+    // Auth pages
+        app.Get("/auth/login", auth.GuestOnly, authController.loginPage)
+        app.Get("/auth/register", auth.GuestOnly, authController.registerPage)
+        app.Get("/auth/forgot-password", auth.GuestOnly, authController.forgotPasswordPage)
+        app.Get("/auth/reset-password", auth.GuestOnly, authController.resetPasswordPage)
+        app.Get("/auth/password/confirm", auth.AuthRequired, authController.passwordConfirmPage)
+        app.Get("/auth/2fa/challenge", auth.RequiresTwoFactorPending, authController.challengePage)
+
+    // Authentication
+        app.Post("/auth/register", auth.GuestOnly, auth.RateLimiter(5, time.Minute), authController.register)
+        app.Post("/auth/login", auth.GuestOnly, auth.RateLimiter(5, time.Minute), authController.login)
+        app.Post("/auth/logout", auth.AuthRequired, authController.logout)
+
+    // Profile & password
+        app.Put("/auth/profile", auth.AuthRequired, authController.updateProfile)
+        app.Put("/auth/password", auth.AuthRequired, auth.RequiresPasswordConfirmed, authController.updatePassword)
+
+    // Password reset
+        app.Post("/auth/forgot-password", auth.GuestOnly, auth.RateLimiter(3, time.Hour), authController.forgotPassword)
+        app.Post("/auth/reset-password", auth.GuestOnly, authController.resetPassword)
+
+    // Email verification
+        app.Post("/auth/email/verify-send", auth.AuthRequired, auth.RateLimiter(3, time.Hour), authController.emailVerifySend)
+        app.Get("/auth/email/verify", authController.emailVerify)
+
+    // Password confirmation
+        app.Get("/auth/password/confirm-status", auth.AuthRequired, authController.passwordConfirmStatus)
+        app.Post("/auth/password/confirm", auth.AuthRequired, authController.passwordConfirm)
+
+    // Two-factor authentication
+        app.Post("/auth/2fa/enable", auth.AuthRequired, auth.RequiresPasswordConfirmed, authController.enable2FA)
+        app.Post("/auth/2fa/confirm", auth.AuthRequired, authController.confirm2FA)
+        app.Post("/auth/2fa/disable", auth.AuthRequired, auth.RequiresPasswordConfirmed, authController.disable2FA)
+        app.Post("/auth/2fa/challenge", auth.RequiresTwoFactorPending, auth.RateLimiter(5, time.Minute), authController.challenge2FA)
+
+        app.Get("/auth/2fa/recovery-codes", auth.AuthRequired, authController.recoveryCodes)
+        app.Post("/auth/2fa/recovery-codes", auth.AuthRequired, auth.RequiresPasswordConfirmed, auth.RateLimiter(5, time.Minute), authController.regenerateRecoveryCodes)
+
+    // Passkeys / WebAuthn
+        app.Get("/auth/passkeys", auth.AuthRequired, authController.listPasskeys)
+        app.Post("/auth/passkeys/register/options", auth.AuthRequired, authController.passkeyRegisterOptions)
+        app.Post("/auth/passkeys/register", auth.AuthRequired, authController.passkeyRegister)
+        app.Patch("/auth/passkeys/{id}", auth.AuthRequired, authController.passkeyRename)
+        app.Post("/auth/passkeys/login/options", auth.GuestOnly, auth.RateLimiter(5, time.Minute), authController.passkeyLoginOptions)
+        app.Post("/auth/passkeys/login", auth.GuestOnly, auth.RateLimiter(5, time.Minute), authController.passkeyLogin)
+        app.Delete("/auth/passkeys/{id}", auth.AuthRequired, auth.RequiresPasswordConfirmed, authController.passkeyDelete)
+
+    app.Listen(":3000")
+}
+```
