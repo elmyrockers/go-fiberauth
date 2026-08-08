@@ -1,6 +1,9 @@
 package mysql
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // Config holds everything needed to open a MariaDB/MySQL connection pool.
 type Config struct {
