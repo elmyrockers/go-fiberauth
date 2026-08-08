@@ -1,0 +1,301 @@
+// Package mysql implements session.DatabaseAdapter on top of MariaDB/MySQL,
+// using database/sql and the go-sql-driver/mysql driver.
+package mysql
+
+import (
+	"fmt"
+	"database/sql"
+	"errors"
+	"time"
+
+	"github.com/go-sql-driver/mysql"
+	"github.com/google/uuid"
+
+	"github.com/elmyrockers/go-fiberauth/session"
+)
+
+type Adapter struct {
+	db *sql.DB
+}
+
+// New() opens a connection pool from cfg and verifies it with a ping.
+func New(cfg Config) (*Adapter, error) {
+	db, err := sql.Open("mysql", cfg.dsn())
+	if err != nil {
+		return nil, fmt.Errorf("mysql: open: %w", err)
+	}
+
+	maxOpen := cfg.MaxOpenConns
+	if maxOpen == 0 {
+		maxOpen = 10
+	}
+	maxIdle := cfg.MaxIdleConns
+	if maxIdle == 0 {
+		maxIdle = 5
+	}
+	connMaxLifetime := cfg.ConnMaxLifetime
+	if connMaxLifetime == 0 {
+		connMaxLifetime = 30 * time.Minute
+	}
+
+	db.SetMaxOpenConns(maxOpen)
+	db.SetMaxIdleConns(maxIdle)
+	db.SetConnMaxLifetime(connMaxLifetime)
+
+	if err := db.Ping(); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("mysql: ping: %w", err)
+	}
+
+	return &Adapter{db: db}, nil
+}
+
+func (a *Adapter) FindUserByEmail(email string) (session.User, error) {
+	const q = `
+		SELECT id, name, email, email_verified_at, password, remember_token,
+		       two_factor_secret, two_factor_recovery_codes, two_factor_confirmed_at,
+		       created_at, updated_at
+		FROM users
+		WHERE email = ?
+		LIMIT 1`
+	return a.scanUser(a.db.QueryRow(q, email))
+}
+
+func (a *Adapter) FindUserByID(id string) (session.User, error) {
+	const q = `
+		SELECT id, name, email, email_verified_at, password, remember_token,
+		       two_factor_secret, two_factor_recovery_codes, two_factor_confirmed_at,
+		       created_at, updated_at
+		FROM users
+		WHERE id = ?
+		LIMIT 1`
+	return a.scanUser(a.db.QueryRow(q, id))
+}
+
+func (a *Adapter) scanUser(row *sql.Row) (session.User, error) {
+	var (
+		u                      User
+		name                   sql.NullString
+		emailVerifiedAt        sql.NullTime
+		rememberToken          sql.NullString
+		twoFactorSecret        sql.NullString
+		twoFactorRecoveryCodes sql.NullString
+		twoFactorConfirmedAt   sql.NullTime
+	)
+
+	err := row.Scan(
+		&u.ID, &name, &u.Email, &emailVerifiedAt, &u.Password, &rememberToken,
+		&twoFactorSecret, &twoFactorRecoveryCodes, &twoFactorConfirmedAt,
+		&u.CreatedAt, &u.UpdatedAt,
+	)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	u.Name = name.String
+	u.RememberToken = rememberToken.String
+	u.TwoFactorSecret = twoFactorSecret.String
+
+	if emailVerifiedAt.Valid {
+		t := emailVerifiedAt.Time
+		u.EmailVerifiedAt = &t
+	}
+	if twoFactorConfirmedAt.Valid {
+		t := twoFactorConfirmedAt.Time
+		u.TwoFactorConfirmedAt = &t
+	}
+
+	codes, err := unmarshalRecoveryCodes(twoFactorRecoveryCodes.String)
+	if err != nil {
+		return nil, err
+	}
+	u.TwoFactorRecoveryCodes = codes
+
+	return &u, nil
+}
+
+func (a *Adapter) CreateUser(user session.User) error {
+	if user.GetID() == "" {
+		user.SetID(uuid.NewString())
+	}
+
+	codesJSON, err := marshalRecoveryCodes(user.GetTwoFactorRecoveryCodes())
+	if err != nil {
+		return err
+	}
+
+	now := time.Now().UTC()
+
+	const q = `
+		INSERT INTO users (
+			id, email, email_verified_at, password, remember_token,
+			two_factor_secret, two_factor_recovery_codes, two_factor_confirmed_at,
+			created_at, updated_at
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+
+	_, err = a.db.Exec(q,
+		user.GetID(),
+		user.GetEmail(),
+		nullableTime(user.GetEmailVerifiedAt()),
+		user.GetPassword(),
+		nullableString(user.GetRememberToken()),
+		nullableString(user.GetTwoFactorSecret()),
+		codesJSON,
+		nullableTime(user.GetTwoFactorConfirmedAt()),
+		now,
+		now,
+	)
+	if isDuplicateEntry(err) {
+		return ErrDuplicateEmail
+	}
+	return err
+}
+
+func (a *Adapter) UpdateUser(user session.User) error {
+	codesJSON, err := marshalRecoveryCodes(user.GetTwoFactorRecoveryCodes())
+	if err != nil {
+		return err
+	}
+
+	const q = `
+		UPDATE users SET
+			email = ?,
+			email_verified_at = ?,
+			password = ?,
+			remember_token = ?,
+			two_factor_secret = ?,
+			two_factor_recovery_codes = ?,
+			two_factor_confirmed_at = ?,
+			updated_at = ?
+		WHERE id = ?`
+
+	res, err := a.db.Exec(q,
+		user.GetEmail(),
+		nullableTime(user.GetEmailVerifiedAt()),
+		user.GetPassword(),
+		nullableString(user.GetRememberToken()),
+		nullableString(user.GetTwoFactorSecret()),
+		codesJSON,
+		nullableTime(user.GetTwoFactorConfirmedAt()),
+		time.Now().UTC(),
+		user.GetID(),
+	)
+	if isDuplicateEntry(err) {
+		return ErrDuplicateEmail
+	}
+	if err != nil {
+		return err
+	}
+
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (a *Adapter) CreatePasswordResetToken(token session.PasswordResetToken) error {
+	if token.GetID() == "" {
+		token.SetID(uuid.NewString())
+	}
+
+	const q = `
+		INSERT INTO password_reset_tokens (
+			id, user_id, token_hash, expires_at, used_at, created_at
+		) VALUES (?, ?, ?, ?, ?, ?)`
+
+	_, err := a.db.Exec(q,
+		token.GetID(),
+		token.GetUserID(),
+		token.GetTokenHash(),
+		token.GetExpiresAt().UTC(),
+		nullableTime(token.GetUsedAt()),
+		time.Now().UTC(),
+	)
+	return err
+}
+
+func (a *Adapter) FindPasswordResetToken(tokenHash string) (session.PasswordResetToken, error) {
+	const q = `
+		SELECT id, user_id, token_hash, expires_at, used_at, created_at
+		FROM password_reset_tokens
+		WHERE token_hash = ?
+		LIMIT 1`
+
+	var (
+		t         PasswordResetToken
+		usedAt    sql.NullTime
+		createdAt time.Time
+	)
+
+	err := a.db.QueryRow(q, tokenHash).Scan(
+		&t.ID, &t.UserID, &t.TokenHash, &t.ExpiresAt, &usedAt, &createdAt,
+	)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	t.CreatedAt = createdAt
+	if usedAt.Valid {
+		u := usedAt.Time
+		t.UsedAt = &u
+	}
+
+	return &t, nil
+}
+
+func (a *Adapter) DeletePasswordResetToken(id string) error {
+	res, err := a.db.Exec(`DELETE FROM password_reset_tokens WHERE id = ?`, id)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (a *Adapter) DeleteExpiredPasswordResetTokens() error {
+	_, err := a.db.Exec(`DELETE FROM password_reset_tokens WHERE expires_at < ?`, time.Now().UTC())
+	return err
+}
+
+// Close closes the underlying connection pool.
+func (a *Adapter) Close() error {
+	return a.db.Close()
+}
+
+func nullableString(s string) any {
+	if s == "" {
+		return nil
+	}
+	return s
+}
+
+func nullableTime(t *time.Time) any {
+	if t == nil {
+		return nil
+	}
+	return t.UTC()
+}
+
+func isDuplicateEntry(err error) bool {
+	var mysqlErr *mysql.MySQLError
+	if errors.As(err, &mysqlErr) {
+		return mysqlErr.Number == 1062
+	}
+	return false
+}
