@@ -1,20 +1,53 @@
 package controller
 
 import (
+	"errors"
+	"encoding/json"
+
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/csrf"
+	fiberauth "github.com/elmyrockers/go-fiberauth/session"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/go-playground/locales/en"
+	ut "github.com/go-playground/universal-translator"
+	en_translations "github.com/go-playground/validator/v10/translations/en"
+	
+	"github.com/elmyrockers/go-fiberauth/examples/session/form"
+	"github.com/davecgh/go-spew/spew"
 )
 
-type AuthController struct {}
+type AuthController struct {
+	auth *fiberauth.Auth
+	validator *validator.Validate
+	translator ut.Translator
+}
 
-func NewAuth() *AuthController {
-	return &AuthController{}
+func NewAuth(auth *fiberauth.Auth) *AuthController {
+	validator := validator.New()
+
+	enLocale := en.New()
+	uni := ut.New( enLocale )
+	translator, _ := uni.GetTranslator("en")
+	en_translations.RegisterDefaultTranslations(validator, translator)
+
+	return &AuthController{ auth: auth, validator: validator, translator: translator }
 }
 
 // HTTP METHOD: GET
 func (ac *AuthController) RegisterPage(c fiber.Ctx) error {
+	var fieldErrors map[string]string
+
+	// Fetch JSON string from flash message
+		validationErrors := c.Redirect().Message("validation_errors").Value
+		if validationErrors != "" {
+			_ = json.Unmarshal([]byte(validationErrors), &fieldErrors)
+		}
+
 	return c.Render("register", fiber.Map{
 				"csrf": csrf.TokenFromContext(c),
+				"validation_errors": fieldErrors,
+				"old_inputs": c.Redirect().OldInputs(),
 			})
 }
 
@@ -73,7 +106,41 @@ func (ac *AuthController) TwoFactorAuthRecoveryCodesPage(c fiber.Ctx) error {
 
 // HTTP METHOD: POST, PUT
 func (ac *AuthController) Register(c fiber.Ctx) error {
-	// return c.Redirect().To( "/auth/register" )
+	// Parse + validate input (name, email, password, password_confirmation)
+		var user form.RegisterForm
+		if err := c.Bind().Body(&user); err != nil {
+			return c.Redirect().Status(fiber.StatusSeeOther).With( "error", "invalid form submission" ).Back()
+		}
+		spew.Dump( user )
+
+	// Validate user inputs
+		if err := ac.validator.Struct( user ); err != nil {
+			var validationErrors validator.ValidationErrors
+			errors.As( err, &validationErrors )
+
+			// Translate errors into a map: map[field_name]error_message
+				translatedErrors := validationErrors.Translate(ac.translator)
+
+			// Convert it to JSON
+				validationErrorsInJSON, _ := json.Marshal( translatedErrors )
+				return c.Redirect().Status(fiber.StatusSeeOther).With( "validation_errors", string(validationErrorsInJSON) ).Back()
+		}
+
+		
+
+
+	// Call actions
+		// if err := ac.auth.CreateUser(user); err != nil {
+		// 	// handle ErrDuplicateEmail etc.
+		// }
+		// if err := ac.auth.SendEmailVerificationNotification(user); err != nil {
+		// 	// handle mail failure
+		// }
+
+	// 3. respond: redirect to "check your email" page, or JSON message
+
+
+	//----------------------------------------
 	return c.SendString( "Process Register" )
 }
 
