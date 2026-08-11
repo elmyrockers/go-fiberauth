@@ -1,104 +1,113 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Register</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
+	<script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="min-h-screen bg-gray-100 flex items-center justify-center p-6">
 
-    <div class="w-full max-w-2xl rounded-xl bg-white p-8 shadow-lg">
+	<div class="w-full max-w-2xl rounded-xl bg-white p-8 shadow-lg">
+		{{ if len(validation_errors)>0 }}
+			<div class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+				<ul class="list-disc space-y-1 pl-5">
+					{{ range k,value := validation_errors }}
+						<li>{{ value }}</li>
+					{{ end }}
+				</ul>
+			</div>
+		{{ end }}
+		{{ dump(old_inputs) }}
+		<h1 class="mb-2 text-center text-3xl font-bold">
+			Create Account
+		</h1>
 
-        <h1 class="mb-2 text-center text-3xl font-bold">
-            Create Account
-        </h1>
+		<p class="mb-8 text-center text-sm text-gray-500">
+			Register a new account to continue.
+		</p>
 
-        <p class="mb-8 text-center text-sm text-gray-500">
-            Register a new account to continue.
-        </p>
+		<form method="POST" action="/auth/register" class="grid grid-cols-2 gap-5">
+			<input type="hidden" name="_csrf" value="{{ csrf }}">
+			<div>
+				<label for="name" class="mb-2 block text-sm font-medium">
+					Name
+				</label>
 
-        <form method="POST" action="/auth/register" class="grid grid-cols-2 gap-5">
-            <input type="hidden" name="_csrf" value="{{ csrf }}">
-            <div>
-                <label for="name" class="mb-2 block text-sm font-medium">
-                    Name
-                </label>
+				<input
+					id="name"
+					name="name"
+					type="text"
+					autocomplete="name"
+					autofocus
+					required
+					class="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+				>
+			</div>
 
-                <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    autocomplete="name"
-                    autofocus
-                    required
-                    class="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                >
-            </div>
+			<div>
+				<label for="email" class="mb-2 block text-sm font-medium">
+					Email
+				</label>
 
-            <div>
-                <label for="email" class="mb-2 block text-sm font-medium">
-                    Email
-                </label>
+				<input
+					id="email"
+					name="email"
+					type="email"
+					autocomplete="email"
+					required
+					class="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+				>
+			</div>
 
-                <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autocomplete="email"
-                    required
-                    class="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                >
-            </div>
+			<div>
+				<label for="password" class="mb-2 block text-sm font-medium">
+					Password
+				</label>
 
-            <div>
-                <label for="password" class="mb-2 block text-sm font-medium">
-                    Password
-                </label>
+				<input
+					id="password"
+					name="password"
+					type="password"
+					autocomplete="new-password"
+					required
+					class="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+				>
+			</div>
 
-                <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    autocomplete="new-password"
-                    required
-                    class="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                >
-            </div>
+			<div>
+				<label for="password_confirmation" class="mb-2 block text-sm font-medium">
+					Confirm Password
+				</label>
 
-            <div>
-                <label for="password_confirmation" class="mb-2 block text-sm font-medium">
-                    Confirm Password
-                </label>
+				<input
+					id="password_confirmation"
+					name="password_confirmation"
+					type="password"
+					autocomplete="new-password"
+					required
+					class="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+				>
+			</div>
 
-                <input
-                    id="password_confirmation"
-                    name="password_confirmation"
-                    type="password"
-                    autocomplete="new-password"
-                    required
-                    class="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                >
-            </div>
+			<button
+				type="submit"
+				class="col-span-2 mt-2 rounded-lg bg-blue-600 px-4 py-3 font-medium text-white transition hover:bg-blue-700"
+			>
+				Create Account
+			</button>
 
-            <button
-                type="submit"
-                class="col-span-2 mt-2 rounded-lg bg-blue-600 px-4 py-3 font-medium text-white transition hover:bg-blue-700"
-            >
-                Create Account
-            </button>
+		</form>
 
-        </form>
+		<p class="mt-6 text-center text-sm text-gray-600">
+			Already have an account?
+			<a href="/auth/login" class="font-medium text-blue-600 hover:underline">
+				Sign in
+			</a>
+		</p>
 
-        <p class="mt-6 text-center text-sm text-gray-600">
-            Already have an account?
-            <a href="/auth/login" class="font-medium text-blue-600 hover:underline">
-                Sign in
-            </a>
-        </p>
-
-    </div>
+	</div>
 
 </body>
 </html>
