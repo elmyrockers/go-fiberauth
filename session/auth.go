@@ -18,7 +18,7 @@ type Auth struct {
 func New(config ...Config) *Auth {
 	// Configure
 		var cfg Config
-		if len(config) > 1 { cfg = config[0] }
+		if len(config) > 0 { cfg = config[0] }
 
 	// Set up Auth attributes, then return it
 		loginURL := cfg.LoginURL
