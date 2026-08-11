@@ -11,7 +11,7 @@ import (
 
 	"github.com/elmyrockers/go-fiberauth/examples/session/controller"
 
-	// "github.com/davecgh/go-spew/spew"
+	"github.com/davecgh/go-spew/spew"
 )
 
 func Hello(c fiber.Ctx) error {
@@ -35,6 +35,12 @@ func main(){
 	authController := controller.NewAuth( auth )
 
 	engine := jet.New( "views", ".jet" )
+
+	// Register dump() function for jet template debugging
+		engine.AddFunc("dump", func(v interface{}) string {
+			return spew.Sdump(v)
+		})
+
 	app := fiber.New(fiber.Config{ Views: engine })
 	app.Use(csrf.New(csrf.Config{
 		Extractor: extractors.FromForm("_csrf"),
