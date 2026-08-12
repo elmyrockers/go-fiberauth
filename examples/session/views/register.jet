@@ -19,7 +19,6 @@
 				</ul>
 			</div>
 		{{ end }}
-		{{ dump(old_inputs) }}
 		<h1 class="mb-2 text-center text-3xl font-bold">
 			Create Account
 		</h1>
@@ -43,6 +42,7 @@
 					autofocus
 					required
 					class="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+					value="{{  old_inputs.name }}"
 				>
 			</div>
 
@@ -58,6 +58,7 @@
 					autocomplete="email"
 					required
 					class="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+					value="{{ old_inputs.email }}"
 				>
 			</div>
 
