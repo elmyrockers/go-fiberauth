@@ -44,10 +44,17 @@ func (ac *AuthController) RegisterPage(c fiber.Ctx) error {
 			_ = json.Unmarshal([]byte(validationErrors), &fieldErrors)
 		}
 
+	// Remap old inputs
+		oldInputs := c.Redirect().OldInputs()
+		inputs := make(map[string]string, len(oldInputs))
+		for _, item := range oldInputs {
+			inputs[ item.Key ] = item.Value
+		}
+
 	return c.Render("register", fiber.Map{
 				"csrf": csrf.TokenFromContext(c),
 				"validation_errors": fieldErrors,
-				"old_inputs": c.Redirect().OldInputs(),
+				"old_inputs": inputs,
 			})
 }
 
@@ -123,7 +130,7 @@ func (ac *AuthController) Register(c fiber.Ctx) error {
 
 			// Convert it to JSON
 				validationErrorsInJSON, _ := json.Marshal( translatedErrors )
-				return c.Redirect().Status(fiber.StatusSeeOther).With( "validation_errors", string(validationErrorsInJSON) ).Back()
+				return c.Redirect().Status(fiber.StatusSeeOther).WithInput().With( "validation_errors", string(validationErrorsInJSON) ).Back()
 		}
 
 		
