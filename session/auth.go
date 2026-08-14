@@ -1,9 +1,10 @@
 package session
 
 import (
+	"context"
 	"github.com/gofiber/fiber/v3"
 	fibersession "github.com/gofiber/fiber/v3/middleware/session"
-
+	"golang.org/x/crypto/bcrypt"
 	// "github.com/davecgh/go-spew/spew"
 )
 
@@ -67,6 +68,25 @@ func (a *Auth) AuthRequired(c fiber.Ctx) error {
 
 
 // ACTIONS --------------------------------------------------------------------------
+func (a *Auth) CreateUser(name, email, password string) (int64, error) {
+	hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return 0, err
+	}
+
+	user := a.dbAdapter.NewUser()
+	user.SetName(name)
+	user.SetEmail(email)
+	user.SetPassword(string(hashed))
+
+	userID, err := a.dbAdapter.CreateUser(user)
+	if err != nil {
+		return 0, err
+	}
+
+	return userID, nil
+}
+
 func (a *Auth) CreateSession(c fiber.Ctx, userID string) error {
 	// Get session store and regenerate session id
 		sess, err := a.sessionStore.Get(c)
@@ -80,3 +100,4 @@ func (a *Auth) CreateSession(c fiber.Ctx, userID string) error {
 
 	return sess.Save()
 }
+
