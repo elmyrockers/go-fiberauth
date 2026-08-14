@@ -123,7 +123,7 @@ func (a *Adapter) scanUser(row *sql.Row) (User, error) {
 	return u, nil
 }
 
-func (a *Adapter) CreateUser(user User) (uint64, error) {
+func (a *Adapter) CreateUser(user User) (int64, error) {
 	codesJSON, err := marshalRecoveryCodes(user.TwoFactorRecoveryCodes)
 	if err != nil {
 		return 0, err
