@@ -23,6 +23,9 @@ type User struct {
 func (u *User) GetID() string   { return u.ID }
 func (u *User) SetID(id string) { u.ID = id }
 
+func (u *User) GetName() string   { return u.Name }
+func (u *User) SetName(name string) { u.Name = name }
+
 func (u *User) GetEmail() string            { return u.Email }
 func (u *User) SetEmail(email string)       { u.Email = email }
 func (u *User) GetPassword() string         { return u.Password }
