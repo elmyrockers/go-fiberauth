@@ -123,27 +123,22 @@ func (a *Adapter) scanUser(row *sql.Row) (User, error) {
 	return u, nil
 }
 
-func (a *Adapter) CreateUser(user User) error {
-	if user.ID == "" {
-		user.ID = uuid.NewString()
-	}
-
+func (a *Adapter) CreateUser(user User) (int64, error) {
 	codesJSON, err := marshalRecoveryCodes(user.TwoFactorRecoveryCodes)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	now := time.Now().UTC()
 
 	const q = `
 		INSERT INTO users (
-			id, name, email, email_verified_at, password, remember_token,
+			name, email, email_verified_at, password, remember_token,
 			two_factor_secret, two_factor_recovery_codes, two_factor_confirmed_at,
 			created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
-	_, err = a.db.Exec(q,
-		user.ID,
+	res, err := a.db.Exec(q,
 		user.Name,
 		user.Email,
 		nullableTime(user.EmailVerifiedAt),
@@ -156,9 +151,13 @@ func (a *Adapter) CreateUser(user User) error {
 		now,
 	)
 	if isDuplicateEntry(err) {
-		return ErrDuplicateEmail
+		return 0, ErrDuplicateEmail
 	}
-	return err
+	if err != nil {
+		return 0, err
+	}
+
+	return res.LastInsertId()
 }
 
 func (a *Adapter) UpdateUser(user User) error {
