@@ -63,7 +63,7 @@ type DatabaseAdapter interface {
 	// User
 	FindUserByEmail(email string) (User, error)
 	FindUserByID(id string) (User, error)
-	CreateUser(user User) error
+	CreateUser(user User) (string, error)
 	UpdateUser(user User) error
 
 	// Password reset
