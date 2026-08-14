@@ -56,6 +56,10 @@ type PasswordResetToken interface {
 }
 
 type DatabaseAdapter interface {
+	// New instance
+	NewUser() User
+	NewPasswordResetToken() PasswordResetToken
+
 	// User
 	FindUserByEmail(email string) (User, error)
 	FindUserByID(id string) (User, error)
