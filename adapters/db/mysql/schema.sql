@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS users (
-    id                          CHAR(36)     NOT NULL PRIMARY KEY,
+    id                          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     name                        VARCHAR(255) NULL DEFAULT NULL,
     email                       VARCHAR(255) NOT NULL,
     email_verified_at           DATETIME(6)  NULL,
@@ -14,8 +14,8 @@ CREATE TABLE IF NOT EXISTS users (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
-    id          CHAR(36)     NOT NULL PRIMARY KEY,
-    user_id     CHAR(36)     NOT NULL,
+    id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    user_id     BIGINT UNSIGNED NOT NULL,
     token_hash  VARCHAR(255) NOT NULL,
     expires_at  DATETIME(6)  NOT NULL,
     used_at     DATETIME(6)  NULL,
