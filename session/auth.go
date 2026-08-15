@@ -1,7 +1,6 @@
 package session
 
 import (
-	"context"
 	"github.com/gofiber/fiber/v3"
 	fibersession "github.com/gofiber/fiber/v3/middleware/session"
 	"golang.org/x/crypto/bcrypt"
