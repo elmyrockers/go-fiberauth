@@ -6,11 +6,11 @@ import (
 	"encoding/pem"
 	"fmt"
 	"os"
-	
+
 	"github.com/gofiber/fiber/v3/middleware/session"
 )
 
-// Constant For JWT
+// Constant For JWT and email templates
 const (
 	EmailVerification = "email_verification"
 	PasswordReset = "password_reset"
