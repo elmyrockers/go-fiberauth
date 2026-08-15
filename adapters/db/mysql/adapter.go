@@ -9,7 +9,9 @@ import (
 	"time"
 
 	"github.com/go-sql-driver/mysql"
-	"github.com/google/uuid"
+	// "github.com/google/uuid"
+
+	fiberauth "github.com/elmyrockers/go-fiberauth/session"
 )
 
 type Adapter struct {
@@ -48,15 +50,15 @@ func New(cfg Config) (*Adapter, error) {
 	return &Adapter{db: db}, nil
 }
 
-func (a *Adapter) NewUser() *User {
+func (a *Adapter) NewUser() fiberauth.User {
 	return &User{}
 }
 
-func (a *Adapter) NewPasswordResetToken() *PasswordResetToken {
+func (a *Adapter) NewPasswordResetToken() fiberauth.PasswordResetToken {
 	return &PasswordResetToken{}
 }
 
-func (a *Adapter) FindUserByEmail(email string) (User, error) {
+func (a *Adapter) FindUserByEmail(email string) (fiberauth.User, error) {
 	const q = `
 		SELECT id, name, email, email_verified_at, password, remember_token,
 		       two_factor_secret, two_factor_recovery_codes, two_factor_confirmed_at,
@@ -67,7 +69,7 @@ func (a *Adapter) FindUserByEmail(email string) (User, error) {
 	return a.scanUser(a.db.QueryRow(q, email))
 }
 
-func (a *Adapter) FindUserByID(id string) (User, error) {
+func (a *Adapter) FindUserByID(id int64) (fiberauth.User, error) {
 	const q = `
 		SELECT id, name, email, email_verified_at, password, remember_token,
 		       two_factor_secret, two_factor_recovery_codes, two_factor_confirmed_at,
@@ -78,7 +80,7 @@ func (a *Adapter) FindUserByID(id string) (User, error) {
 	return a.scanUser(a.db.QueryRow(q, id))
 }
 
-func (a *Adapter) scanUser(row *sql.Row) (User, error) {
+func (a *Adapter) scanUser(row *sql.Row) (fiberauth.User, error) {
 	var (
 		u                      User
 		name                   sql.NullString
@@ -95,10 +97,10 @@ func (a *Adapter) scanUser(row *sql.Row) (User, error) {
 		&u.CreatedAt, &u.UpdatedAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
-		return User{}, ErrNotFound
+		return nil, ErrNotFound
 	}
 	if err != nil {
-		return User{}, err
+		return nil, err
 	}
 
 	u.Name = name.String
@@ -116,15 +118,15 @@ func (a *Adapter) scanUser(row *sql.Row) (User, error) {
 
 	codes, err := unmarshalRecoveryCodes(twoFactorRecoveryCodes.String)
 	if err != nil {
-		return User{}, err
+		return nil, err
 	}
 	u.TwoFactorRecoveryCodes = codes
 
-	return u, nil
+	return &u, nil
 }
 
-func (a *Adapter) CreateUser(user User) (int64, error) {
-	codesJSON, err := marshalRecoveryCodes(user.TwoFactorRecoveryCodes)
+func (a *Adapter) CreateUser(user fiberauth.User) (int64, error) {
+	codesJSON, err := marshalRecoveryCodes(user.GetTwoFactorRecoveryCodes())
 	if err != nil {
 		return 0, err
 	}
@@ -139,14 +141,14 @@ func (a *Adapter) CreateUser(user User) (int64, error) {
 		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 	res, err := a.db.Exec(q,
-		user.Name,
-		user.Email,
-		nullableTime(user.EmailVerifiedAt),
-		user.Password,
-		nullableString(user.RememberToken),
-		nullableString(user.TwoFactorSecret),
+		user.GetName(),
+		user.GetEmail(),
+		nullableTime(user.GetEmailVerifiedAt()),
+		user.GetPassword(),
+		nullableString(user.GetRememberToken()),
+		nullableString(user.GetTwoFactorSecret()),
 		codesJSON,
-		nullableTime(user.TwoFactorConfirmedAt),
+		nullableTime(user.GetTwoFactorConfirmedAt()),
 		now,
 		now,
 	)
@@ -160,8 +162,8 @@ func (a *Adapter) CreateUser(user User) (int64, error) {
 	return res.LastInsertId()
 }
 
-func (a *Adapter) UpdateUser(user User) error {
-	codesJSON, err := marshalRecoveryCodes(user.TwoFactorRecoveryCodes)
+func (a *Adapter) UpdateUser(user fiberauth.User) error {
+	codesJSON, err := marshalRecoveryCodes(user.GetTwoFactorRecoveryCodes())
 	if err != nil {
 		return err
 	}
@@ -180,16 +182,16 @@ func (a *Adapter) UpdateUser(user User) error {
 		WHERE id = ?`
 
 	res, err := a.db.Exec(q,
-		user.Name,
-		user.Email,
-		nullableTime(user.EmailVerifiedAt),
-		user.Password,
-		nullableString(user.RememberToken),
-		nullableString(user.TwoFactorSecret),
+		user.GetName(),
+		user.GetEmail(),
+		nullableTime(user.GetEmailVerifiedAt()),
+		user.GetPassword(),
+		nullableString(user.GetRememberToken()),
+		nullableString(user.GetTwoFactorSecret()),
 		codesJSON,
-		nullableTime(user.TwoFactorConfirmedAt),
+		nullableTime(user.GetTwoFactorConfirmedAt()),
 		time.Now().UTC(),
-		user.ID,
+		user.GetID(),
 	)
 	if isDuplicateEntry(err) {
 		return ErrDuplicateEmail
@@ -208,28 +210,23 @@ func (a *Adapter) UpdateUser(user User) error {
 	return nil
 }
 
-func (a *Adapter) CreatePasswordResetToken(token PasswordResetToken) error {
-	if token.ID == "" {
-		token.ID = uuid.NewString()
-	}
-
+func (a *Adapter) CreatePasswordResetToken(token fiberauth.PasswordResetToken) error {
 	const q = `
 		INSERT INTO password_reset_tokens (
-			id, user_id, token_hash, expires_at, used_at, created_at
-		) VALUES (?, ?, ?, ?, ?, ?)`
+			user_id, token_hash, expires_at, used_at, created_at
+		) VALUES (?, ?, ?, ?, ?)`
 
 	_, err := a.db.Exec(q,
-		token.ID,
-		token.UserID,
-		token.TokenHash,
-		token.ExpiresAt.UTC(),
-		nullableTime(token.UsedAt),
+		token.GetUserID(),
+		token.GetTokenHash(),
+		token.GetExpiresAt().UTC(),
+		nullableTime(token.GetUsedAt()),
 		time.Now().UTC(),
 	)
 	return err
 }
 
-func (a *Adapter) FindPasswordResetToken(tokenHash string) (PasswordResetToken, error) {
+func (a *Adapter) FindPasswordResetToken(tokenHash string) (fiberauth.PasswordResetToken, error) {
 	const q = `
 		SELECT id, user_id, token_hash, expires_at, used_at, created_at
 		FROM password_reset_tokens
@@ -246,10 +243,10 @@ func (a *Adapter) FindPasswordResetToken(tokenHash string) (PasswordResetToken, 
 		&t.ID, &t.UserID, &t.TokenHash, &t.ExpiresAt, &usedAt, &createdAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
-		return PasswordResetToken{}, ErrNotFound
+		return nil, ErrNotFound
 	}
 	if err != nil {
-		return PasswordResetToken{}, err
+		return nil, err
 	}
 
 	t.CreatedAt = createdAt
@@ -258,10 +255,10 @@ func (a *Adapter) FindPasswordResetToken(tokenHash string) (PasswordResetToken, 
 		t.UsedAt = &u
 	}
 
-	return t, nil
+	return &t, nil
 }
 
-func (a *Adapter) DeletePasswordResetToken(id string) error {
+func (a *Adapter) DeletePasswordResetToken(id int64) error {
 	res, err := a.db.Exec(`DELETE FROM password_reset_tokens WHERE id = ?`, id)
 	if err != nil {
 		return err
