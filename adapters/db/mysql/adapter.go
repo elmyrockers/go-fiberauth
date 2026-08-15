@@ -48,12 +48,12 @@ func New(cfg Config) (*Adapter, error) {
 	return &Adapter{db: db}, nil
 }
 
-func (a *Adapter) NewUser() User {
-	return User{}
+func (a *Adapter) NewUser() *User {
+	return &User{}
 }
 
-func (a *Adapter) NewPasswordResetToken() PasswordResetToken {
-	return PasswordResetToken{}
+func (a *Adapter) NewPasswordResetToken() *PasswordResetToken {
+	return &PasswordResetToken{}
 }
 
 func (a *Adapter) FindUserByEmail(email string) (User, error) {
