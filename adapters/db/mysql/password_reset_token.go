@@ -3,19 +3,19 @@ package mysql
 import "time"
 
 type PasswordResetToken struct {
-	ID        string
-	UserID    string
+	ID        int64
+	UserID    int64
 	TokenHash string
 	ExpiresAt time.Time
 	UsedAt    *time.Time
 	CreatedAt time.Time
 }
 
-func (t *PasswordResetToken) GetID() string   { return t.ID }
-func (t *PasswordResetToken) SetID(id string) { t.ID = id }
+func (t *PasswordResetToken) GetID() int64   { return t.ID }
+func (t *PasswordResetToken) SetID(id int64) { t.ID = id }
 
-func (t *PasswordResetToken) GetUserID() string   { return t.UserID }
-func (t *PasswordResetToken) SetUserID(id string) { t.UserID = id }
+func (t *PasswordResetToken) GetUserID() int64   { return t.UserID }
+func (t *PasswordResetToken) SetUserID(id int64) { t.UserID = id }
 
 func (t *PasswordResetToken) GetTokenHash() string     { return t.TokenHash }
 func (t *PasswordResetToken) SetTokenHash(hash string) { t.TokenHash = hash }
