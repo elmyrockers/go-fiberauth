@@ -5,6 +5,7 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/session"
 )
 
+// Constant For JWT
 const (
 	EmailVerification = "email_verification"
 	PasswordReset = "password_reset"
@@ -17,10 +18,10 @@ type MailConfig struct {
 }
 
 type Config struct {
-	// For JWT signature
-	HMACKey           []byte
-	RSAPrivateKeyPath string
-	RSAPublicKeyPath  string
+	// JWT signing
+	SharedKey      []byte // used when Algorithm is symmetric (HS256)
+	PrivateKeyPath string // used when Algorithm is asymmetric (RS256)
+	PublicKeyPath  string
 
 	SessionConfig session.Config
 	DatabaseAdapter DatabaseAdapter
@@ -30,18 +31,18 @@ type Config struct {
 }
 
 func (c *Config) LoadPrivateKey() (*rsa.PrivateKey, error) {
-	if c.RSAPrivateKeyPath == "" {
-		return nil, fmt.Errorf("fiberauth: RSAPrivateKeyPath is empty")
+	if c.PrivateKeyPath == "" {
+		return nil, fmt.Errorf("fiberauth: PrivateKeyPath is empty")
 	}
 
-	data, err := os.ReadFile(c.RSAPrivateKeyPath)
+	data, err := os.ReadFile(c.PrivateKeyPath)
 	if err != nil {
 		return nil, fmt.Errorf("fiberauth: read private key: %w", err)
 	}
 
 	block, _ := pem.Decode(data)
 	if block == nil {
-		return nil, fmt.Errorf("fiberauth: invalid PEM in private key file %q", c.RSAPrivateKeyPath)
+		return nil, fmt.Errorf("fiberauth: invalid PEM in private key file %q", c.PrivateKeyPath)
 	}
 
 	if key, err := x509.ParsePKCS1PrivateKey(block.Bytes); err == nil {
@@ -50,40 +51,40 @@ func (c *Config) LoadPrivateKey() (*rsa.PrivateKey, error) {
 
 	parsed, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 	if err != nil {
-		return nil, fmt.Errorf("fiberauth: parse private key %q: %w", c.RSAPrivateKeyPath, err)
+		return nil, fmt.Errorf("fiberauth: parse private key %q: %w", c.PrivateKeyPath, err)
 	}
 
 	rsaKey, ok := parsed.(*rsa.PrivateKey)
 	if !ok {
-		return nil, fmt.Errorf("fiberauth: %q does not contain an RSA private key", c.RSAPrivateKeyPath)
+		return nil, fmt.Errorf("fiberauth: %q does not contain an RSA private key", c.PrivateKeyPath)
 	}
 
 	return rsaKey, nil
 }
 
 func (c *Config) LoadPublicKey() (*rsa.PublicKey, error) {
-	if c.RSAPublicKeyPath == "" {
-		return nil, fmt.Errorf("fiberauth: RSAPublicKeyPath is empty")
+	if c.PublicKeyPath == "" {
+		return nil, fmt.Errorf("fiberauth: PublicKeyPath is empty")
 	}
 
-	data, err := os.ReadFile(c.RSAPublicKeyPath)
+	data, err := os.ReadFile(c.PublicKeyPath)
 	if err != nil {
 		return nil, fmt.Errorf("fiberauth: read public key: %w", err)
 	}
 
 	block, _ := pem.Decode(data)
 	if block == nil {
-		return nil, fmt.Errorf("fiberauth: invalid PEM in public key file %q", c.RSAPublicKeyPath)
+		return nil, fmt.Errorf("fiberauth: invalid PEM in public key file %q", c.PublicKeyPath)
 	}
 
 	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
 	if err != nil {
-		return nil, fmt.Errorf("fiberauth: parse public key %q: %w", c.RSAPublicKeyPath, err)
+		return nil, fmt.Errorf("fiberauth: parse public key %q: %w", c.PublicKeyPath, err)
 	}
 
 	rsaPub, ok := pub.(*rsa.PublicKey)
 	if !ok {
-		return nil, fmt.Errorf("fiberauth: %q does not contain an RSA public key", c.RSAPublicKeyPath)
+		return nil, fmt.Errorf("fiberauth: %q does not contain an RSA public key", c.PublicKeyPath)
 	}
 
 	return rsaPub, nil
