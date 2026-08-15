@@ -7,6 +7,10 @@ type User interface {
 	GetID() string
 	SetID(id string)
 
+	// Name
+	GetName() string
+	SetName(string)
+
 	// Credentials
 	GetEmail() string
 	SetEmail(email string)
