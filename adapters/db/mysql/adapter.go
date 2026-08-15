@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/go-sql-driver/mysql"
-	// "github.com/google/uuid"
 
 	fiberauth "github.com/elmyrockers/go-fiberauth/session"
 )
@@ -97,7 +96,7 @@ func (a *Adapter) scanUser(row *sql.Row) (fiberauth.User, error) {
 		&u.CreatedAt, &u.UpdatedAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, ErrNotFound
+		return nil, fiberauth.ErrNotFound
 	}
 	if err != nil {
 		return nil, err
@@ -153,7 +152,7 @@ func (a *Adapter) CreateUser(user fiberauth.User) (int64, error) {
 		now,
 	)
 	if isDuplicateEntry(err) {
-		return 0, ErrDuplicateEmail
+		return 0, fiberauth.ErrEmailTaken
 	}
 	if err != nil {
 		return 0, err
@@ -194,7 +193,7 @@ func (a *Adapter) UpdateUser(user fiberauth.User) error {
 		user.GetID(),
 	)
 	if isDuplicateEntry(err) {
-		return ErrDuplicateEmail
+		return fiberauth.ErrEmailTaken
 	}
 	if err != nil {
 		return err
@@ -205,7 +204,7 @@ func (a *Adapter) UpdateUser(user fiberauth.User) error {
 		return err
 	}
 	if n == 0 {
-		return ErrNotFound
+		return fiberauth.ErrNotFound
 	}
 	return nil
 }
@@ -243,7 +242,7 @@ func (a *Adapter) FindPasswordResetToken(tokenHash string) (fiberauth.PasswordRe
 		&t.ID, &t.UserID, &t.TokenHash, &t.ExpiresAt, &usedAt, &createdAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, ErrNotFound
+		return nil, fiberauth.ErrNotFound
 	}
 	if err != nil {
 		return nil, err
@@ -268,7 +267,7 @@ func (a *Adapter) DeletePasswordResetToken(id int64) error {
 		return err
 	}
 	if n == 0 {
-		return ErrNotFound
+		return fiberauth.ErrNotFound
 	}
 	return nil
 }
