@@ -7,7 +7,7 @@ import (
 
 // User is the concrete, MariaDB/MySQL-backed implementation of session.User.
 type User struct {
-	ID                     string
+	ID                     int64
 	Name                   string
 	Email                  string
 	EmailVerifiedAt        *time.Time
@@ -20,8 +20,8 @@ type User struct {
 	UpdatedAt              time.Time
 }
 
-func (u *User) GetID() string   { return u.ID }
-func (u *User) SetID(id string) { u.ID = id }
+func (u *User) GetID() int64   { return u.ID }
+func (u *User) SetID(id int64) { u.ID = id }
 
 func (u *User) GetName() string   { return u.Name }
 func (u *User) SetName(name string) { u.Name = name }
