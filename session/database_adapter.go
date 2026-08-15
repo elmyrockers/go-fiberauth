@@ -4,8 +4,8 @@ import "time"
 
 type User interface {
 	// ID
-	GetID() string
-	SetID(id string)
+	GetID() int64
+	SetID(id int64)
 
 	// Name
 	GetName() string
