@@ -39,12 +39,12 @@ type User interface {
 
 type PasswordResetToken interface {
 	// ID
-	GetID() string
-	SetID(id string)
+	GetID() int64
+	SetID(id int64)
 
 	// User relation
-	GetUserID() string
-	SetUserID(id string)
+	GetUserID() int64
+	SetUserID(id int64)
 
 	// Token
 	GetTokenHash() string
@@ -66,14 +66,14 @@ type DatabaseAdapter interface {
 
 	// User
 	FindUserByEmail(email string) (User, error)
-	FindUserByID(id string) (User, error)
+	FindUserByID(id int64) (User, error)
 	CreateUser(user User) (int64, error)
 	UpdateUser(user User) error
 
 	// Password reset
 	CreatePasswordResetToken(token PasswordResetToken) error
 	FindPasswordResetToken(tokenHash string) (PasswordResetToken, error)
-	DeletePasswordResetToken(id string) error
+	DeletePasswordResetToken(id int64) error
 
 	// Cleanup
 	DeleteExpiredPasswordResetTokens() error
