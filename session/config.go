@@ -2,6 +2,11 @@ package session
 
 import (
 	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
+	"fmt"
+	"os"
+	
 	"github.com/gofiber/fiber/v3/middleware/session"
 )
 
