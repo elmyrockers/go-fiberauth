@@ -193,37 +193,59 @@ func (a *Auth) SendEmailVerificationNotification(userID int64, name, email, veri
 }
 
 func (a *Auth) VerifyEmail(tokenString string) (int64, error) {
-	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
-		if a.publicKey != nil {
-			if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
+	// Parse JWT Token
+		token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
+			if a.publicKey != nil {
+				if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
+					return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+				}
+				return a.publicKey, nil
+			}
+			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 			}
-			return a.publicKey, nil
+			return a.sharedKey, nil
+		})
+
+	// Make sure token is valid
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			return 0, ErrTokenExpired
 		}
-		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+		if err != nil || !token.Valid {
+			return 0, ErrInvalidToken
 		}
-		return a.sharedKey, nil
-	})
 
-	if errors.Is(err, jwt.ErrTokenExpired) {
-		return 0, ErrTokenExpired
-	}
-	if err != nil || !token.Valid {
-		return 0, ErrInvalidToken
-	}
+	// Get claims
+		claims, ok := token.Claims.(jwt.MapClaims)
 
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok || claims["purpose"] != EmailVerification {
-		return 0, ErrInvalidToken
-	}
+		// Check purpose
+			if !ok || claims["purpose"] != EmailVerification {
+				return 0, ErrInvalidToken
+			}
 
-	userIDFloat, ok := claims["user_id"].(float64)
-	if !ok {
-		return 0, ErrInvalidToken
-	}
+		// Get User ID
+			userIDFloat, ok := claims["user_id"].(float64)
+			if !ok {
+				return 0, ErrInvalidToken
+			}
+			userID := int64(userIDFloat)
 
-	return int64(userIDFloat), nil
+		// Get email from claims
+			tokenEmail, ok := claims["email"].(string)
+			if !ok || tokenEmail == "" {
+				return 0, ErrInvalidToken
+			}
+
+		// Confirm the token's email still matches the user's current email
+			user, err := a.dbAdapter.FindUserByID(userID)
+			if err != nil {
+				return 0, err
+			}
+			if user.GetEmail() != tokenEmail {
+				return 0, ErrInvalidToken // email changed since link was issued — reject
+			}
+
+	return userID, nil
 }
 
 func (a *Auth) CreateSession(c fiber.Ctx, userID string) error {
