@@ -39,6 +39,7 @@ func (ac *AuthController) RegisterPage(c fiber.Ctx) error {
 	var fieldErrors map[string]string
 
 	// Fetch JSON string from flash message
+		error := c.Redirect().Message("error").Value
 		validationErrors := c.Redirect().Message("validation_errors").Value
 		if validationErrors != "" {
 			_ = json.Unmarshal([]byte(validationErrors), &fieldErrors)
@@ -54,27 +55,27 @@ func (ac *AuthController) RegisterPage(c fiber.Ctx) error {
 	return c.Render("register", fiber.Map{
 				"csrf": csrf.TokenFromContext(c),
 				"validation_errors": fieldErrors,
+				"error":error,
 				"old_inputs": inputs,
 			})
 }
 
 func (ac *AuthController) LoginPage(c fiber.Ctx) error {
+	success := c.Redirect().Message( "success" ).Value
 	return c.Render("login", fiber.Map{
-				"Title": "Login Form",
+				"success": success,
 				"csrf": csrf.TokenFromContext(c),
 			})
 }
 
 func (ac *AuthController) ForgotPasswordPage(c fiber.Ctx) error {
 	return c.Render("forgot-password", fiber.Map{
-				"Title": "Forgot Password Form",
 				"csrf": csrf.TokenFromContext(c),
 			})
 }
 
 func (ac *AuthController) ResetPasswordPage(c fiber.Ctx) error {
 	return c.Render("reset-password", fiber.Map{
-				"Title": "Reset Password Form",
 				"csrf": csrf.TokenFromContext(c),
 				"token": "",
 			})
@@ -82,21 +83,18 @@ func (ac *AuthController) ResetPasswordPage(c fiber.Ctx) error {
 
 func (ac *AuthController) PasswordConfirmationPage(c fiber.Ctx) error {
 	return c.Render("password-confirmation", fiber.Map{
-				"Title": "Password Confirmation Form",
 				"csrf": csrf.TokenFromContext(c),
 			})
 }
 
 func (ac *AuthController) TwoFactorAuthChallengePage(c fiber.Ctx) error {
 	return c.Render("2fa-challenge", fiber.Map{
-				"Title": "2FA Challenge Form",
 				"csrf": csrf.TokenFromContext(c),
 			})
 }
 
 func (ac *AuthController) TwoFactorAuthRecoveryCodesPage(c fiber.Ctx) error {
 	return c.Render("2fa-recovery-codes", fiber.Map{
-				"Title": "2FA Recovery Codes Form",
 				"csrf": csrf.TokenFromContext(c),
 				"codes": []string{
 					"A1BC-DEFG",
@@ -116,7 +114,7 @@ func (ac *AuthController) Register(c fiber.Ctx) error {
 	// Parse + validate input (name, email, password, password_confirmation)
 		var user form.RegisterForm
 		if err := c.Bind().Body(&user); err != nil {
-			return c.Redirect().Status(fiber.StatusSeeOther).With( "error", "invalid form submission" ).Back()
+			return c.Redirect().With( "error", "Invalid form submission" ).Back()
 		}
 		spew.Dump( user )
 
@@ -128,35 +126,38 @@ func (ac *AuthController) Register(c fiber.Ctx) error {
 			// Translate errors into a map: map[field_name]error_message
 				translatedErrors := validationErrors.Translate(ac.translator)
 
-			// Convert it to JSON
+			// Convert it to JSON then redirect
 				validationErrorsInJSON, _ := json.Marshal( translatedErrors )
-				return c.Redirect().Status(fiber.StatusSeeOther).WithInput().With( "validation_errors", string(validationErrorsInJSON) ).Back()
+				return c.Redirect().WithInput().With( "validation_errors", string(validationErrorsInJSON) ).Back()
 		}
 
-		
+	// Create new user
+		userID, err := ac.auth.CreateUser( user.Name, user.Email, user.Password )
+		if err != nil {
+			var errMessage string
+			if errors.Is(err, fiberauth.ErrEmailTaken) {
+				errMessage = "Email is already registered"
+			} else if errors.Is(err, fiberauth.ErrPasswordTooLong) {
+				errMessage = "Password is too long"
+			} else {
+				errMessage = "Failed to create account"
+			}
+			return c.Redirect().WithInput().With( "error", errMessage ).Back()
+		}
 
+	// Send a notification for email verification
+		if err := ac.auth.SendEmailVerificationNotification(userID,user.Name,user.Email, "http://localhost:3000/auth/verify-email"); err != nil {
+			return c.Redirect().WithInput().With( "error", "Account created, but failed to send verification email" ).Back()
+		}
 
-	// Call actions
-		// if err := ac.auth.CreateUser(user); err != nil {
-		// 	// handle ErrDuplicateEmail etc.
-		// }
-		// if err := ac.auth.SendEmailVerificationNotification(user); err != nil {
-		// 	// handle mail failure
-		// }
-
-	// 3. respond: redirect to "check your email" page, or JSON message
-
-
-	//----------------------------------------
-	return c.SendString( "Process Register" )
+	// Respond: redirect to login page with a success message
+		return c.Redirect().With( "success", "Account created - check your email to verify before logging in" ).To( "/auth/login" )
 }
 
 func (ac *AuthController) Login(c fiber.Ctx) error {
-	// return c.Redirect().To( "/auth/login" )
 	return c.SendString( "Process Login" )
 }
 
 func (ac *AuthController) ForgotPassword(c fiber.Ctx) error {
-	// return c.Redirect().To( "/auth/login" )
 	return c.SendString( "Process ForgotPassword" )
 }
