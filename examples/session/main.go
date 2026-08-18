@@ -8,10 +8,12 @@ import (
 	"github.com/gofiber/template/jet/v3"
 	fiberauth "github.com/elmyrockers/go-fiberauth/session"
 	"github.com/elmyrockers/go-fiberauth/adapters/db/mysql"
+	"github.com/elmyrockers/go-fiberauth/adapters/mail/ses"
+
+	_ "github.com/joho/godotenv/autoload"
+	"github.com/davecgh/go-spew/spew"
 
 	"github.com/elmyrockers/go-fiberauth/examples/session/controller"
-
-	"github.com/davecgh/go-spew/spew"
 )
 
 func Hello(c fiber.Ctx) error {
@@ -30,6 +32,13 @@ func main(){
 
 	auth := fiberauth.New(fiberauth.Config{
 		DatabaseAdapter: db,
+		MailAdapter: ses.New(),
+		MailConfig: fiberauth.MailConfig{
+			From: fiberauth.MailAddress{
+				Name: "Xeno System",
+				Email: "noreply@xeno.com.my",
+			},
+		},
 	})
 
 	authController := controller.NewAuth( auth )
