@@ -10,6 +10,11 @@
 <body class="min-h-screen bg-gray-100 flex items-center justify-center p-6">
 
 	<div class="w-full max-w-2xl rounded-xl bg-white p-8 shadow-lg">
+		{{ if len(error)>0 }}
+			<div class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+				{{ error }}
+			</div>
+		{{ end }}
 		{{ if len(validation_errors)>0 }}
 			<div class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
 				<ul class="list-disc space-y-1 pl-5">
