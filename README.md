@@ -1,3 +1,3 @@
 # go-fiberauth
 
-Session-based authentication middleware for Fiber microframework, with any RDBMS, NoSQL, or caching backend.
+Stateless auth library for Fiber, inspired by ASP.NET Core Identity, with opaque token and cookie-based auth.
