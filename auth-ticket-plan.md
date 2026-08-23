@@ -1,5 +1,5 @@
 BEARER TOKEN (OPAQUE)
-issue()
+- issue()
 
 #### Tokens
 - Access Token
@@ -8,4 +8,4 @@ issue()
 
 
 COOKIE TICKET
-issue()
+- issue()
