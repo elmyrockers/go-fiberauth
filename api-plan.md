@@ -23,7 +23,7 @@
 - `NewUser() User`
 - `CreateUser(user User, password string) error`
 - `GenerateEmailConfirmationToken(user User) (token string, error)`
-- `SendConfirmationEmail(user User, token string) error`
+- `SendConfirmationEmail(user User, token string) error` - Add email delivery support (non-Identity)
 - `ConfirmEmail(user User, token string) error`
 
 #### 3. Login & Session
@@ -39,7 +39,7 @@
 
 #### 4. Password Reset (Unauthenticated)
 - `GeneratePasswordResetToken(user User) (resetToken string, error)`
-- `SendPasswordResetEmail(user User, token string) error`
+- `SendPasswordResetEmail(user User, token string) error` - Add email delivery support (non-Identity)
 - `ResetPassword(user User, token, newPassword string) error`
 
 #### 5. Profile & Password Updates (Authenticated)
