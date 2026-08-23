@@ -29,10 +29,13 @@
 #### 3. Login & Session
 - `CheckPassword(user User, password string) (isValid bool, error)`
 - `SignIn(user User, isPersistent bool) (Session, error)` — low level, it will just create login state only
-  - `HttpContext.SignInAsync(string scheme, ClaimsPrincipal principal, AuthenticationProperties properties)`
-    - OPAQUE TOKENS AND COOKIE
-    - DURING LOGIN: Detect query — `?useCookies=true`
-    - EVERY REQUEST: Auto-detect bearer/cookie header
+  - `IssueAuthTicket(scheme string, user User, isPersistent bool) (string, error)`
+        - Go equivalent of `HttpContext.SignInAsync(string scheme, ClaimsPrincipal principal, AuthenticationProperties properties)` - Identity method
+  - `buildClaims(user)`, `issueCookieTicket(claims, isPersistent)`, `issueBearerToken(claims, isPersistent)`
+        - OPAQUE TOKENS AND COOKIE
+        - DURING LOGIN: Detect query — `?useCookies=true`
+  - `GuestOnly` and `AuthRequired` middlewares
+        - EVERY REQUEST: Auto-detect bearer/cookie header
 - `PasswordSignIn(user User, password string, isPersistence bool, lockoutOnFailure bool) (SignInResult, error)` — signin with User instance, will call `SignIn()` underneath
 - `PasswordSignInWithEmail(email, password string, isPersistence bool, lockoutOnFailure bool) (SignInResult, error)` — signin with email, will call `PasswordSignIn()` underneath
 - `SignOut() error`
