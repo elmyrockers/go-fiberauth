@@ -33,8 +33,8 @@
     - OPAQUE TOKENS AND COOKIE
     - DURING LOGIN: Detect query — `?useCookies=true`
     - EVERY REQUEST: Auto-detect bearer/cookie header
-- `PasswordSignIn(user User, password string, rememberMe bool) (SignInResult, error)` — signin with User instance, will call `SignIn()` underneath
-- `PasswordSignInWithEmail(email, password string, rememberMe bool) (SignInResult, error)` — signin with email, will call `PasswordSignIn()` underneath
+- `PasswordSignIn(user User, password string, isPersistence bool, lockoutOnFailure bool) (SignInResult, error)` — signin with User instance, will call `SignIn()` underneath
+- `PasswordSignInWithEmail(email, password string, isPersistence bool, lockoutOnFailure bool) (SignInResult, error)` — signin with email, will call `PasswordSignIn()` underneath
 - `SignOut() error`
 
 #### 4. Password Reset (Unauthenticated)
