@@ -1,6 +1,10 @@
 # Authentication Middleware for Golang Fiber v3
+## A. Setup
+- `New( config ) *FiberAuth`
+    - `app.Use( fiberauth.New(config) )`
+- `FromContext( context fiber.Ctx ) *FiberAuth`
 
-## A. Middlewares
+## B. Middlewares
 
 1. **GuestOnly** — Blocks access if user is already logged in
 2. **AuthRequired** — Blocks access if not logged in; falls back to remember-token cookie
@@ -10,7 +14,7 @@
 6. **RequiresVerifiedEmail** — Blocks access if the authenticated user has not verified their email (applied externally to protected app routes like dashboards, or optionally wired here)
 7. **CSRF** — Protects state-changing requests (Fiber's built-in `csrf.New()`)
 
-## B. Actions
+## C. Actions
 
 ### Password-Based Authentication
 
