@@ -38,10 +38,10 @@
 - `CheckPassword(user User, password string) (isValid bool, error)`
 - `SignIn(scheme string, user User, isPersistent bool) (Session, error)` — low level, it will just create login state only
   - `IssueAuthTicket(scheme string, user User, isPersistent bool) (string, error)`
-        - Go equivalent of `HttpContext.SignInAsync(string scheme, ClaimsPrincipal principal, AuthenticationProperties properties)` - Identity method
-  - `buildClaims(user)`, `issueCookieTicket(claims, isPersistent)`, `issueBearerToken(claims, isPersistent)`
-        - OPAQUE TOKENS AND COOKIE
-        - DURING LOGIN: Detect query — `?useCookies=true`
+    - Go equivalent of `HttpContext.SignInAsync(string scheme, ClaimsPrincipal principal, AuthenticationProperties properties)` - Identity method
+  - ldClaims(user)`, `issueCookieTicket(claims, isPersistent)`, `issueBearerToken(claims, isPersistent)`
+    - OPAQUE TOKENS AND COOKIE
+    - DURING LOGIN: Detect query — `?useCookies=true`
   - `GuestOnly` and `AuthRequired` middlewares — auto-detect `bearer or cookie header` on every request
 - `PasswordSignIn(user User, password string, isPersistence bool, lockoutOnFailure bool) (SignInResult, error)` — signin with User instance, will call `SignIn()` underneath
 - `PasswordSignInWithEmail(email, password string, isPersistence bool, lockoutOnFailure bool) (SignInResult, error)` — signin with email, will call `PasswordSignIn()` underneath
