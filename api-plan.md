@@ -5,7 +5,9 @@
         - `app := fiber.New()`
         - `app.Use( fiberauth.New(config) )`
 - `FromContext( context fiber.Ctx ) *FiberAuth`
-
+    - ***Usage:***
+        - `auth := fiberauth.FromContext( c )`
+        - `user := auth.NewUser()`
 ## B. Middlewares
 
 1. **GuestOnly** — Blocks access if user is already logged in
