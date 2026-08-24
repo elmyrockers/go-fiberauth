@@ -1,7 +1,7 @@
 # Authentication Middleware for Golang Fiber v3
 ## A. Setup
 - `New( config ) *FiberAuth`
-    - `app.Use( fiberauth.New(config) )`
+    - **Usage:** `app.Use( fiberauth.New(config) )`
 - `FromContext( context fiber.Ctx ) *FiberAuth`
 
 ## B. Middlewares
