@@ -16,7 +16,7 @@ Most authentication libraries either force you into heavy server-side session st
 
 **xvelope** takes a different approach by bringing the robust architecture of **ASP.NET Core Identity** to Go, focusing strictly on statelessness and data privacy.
 
-### Core Concepts
+#### Core Concepts
 
 * **Stateless by Design:** Your server doesn't need to track session state in memory or a database cache. The entire authentication context travels securely with the HTTP request.
 * **Sealed, Unreadable Cookies:** Instead of base64-encoded JWTs, `xvelope` uses **AES-256-GCM Envelope Encryption**. The client receives a mathematically sealed cookie. If they try to decode it, they see nothing. If they tamper with it, the GCM auth tag instantly rejects it.
