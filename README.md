@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 <div align="center">
-    <img src="img/logo.jpg" width="500" />
+    <img src="img/logo.svg" width="500" />
 </div><br>
 
 Secure, stateless auth library for Go. AES-256-GCM encrypted cookies and opaque tokens inspired by ASP.NET Core Identity.
