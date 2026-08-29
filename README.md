@@ -1,3 +1,3 @@
 # go-xvelope
 
-Stateless auth library for Fiber - no session store needed. Inspired by ASP.NET Core Identity, with opaque token and cookie-based auth.
+Secure, stateless auth library for Go. AES-256-GCM encrypted cookies and opaque tokens inspired by ASP.NET Core Identity.
