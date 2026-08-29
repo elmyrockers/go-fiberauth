@@ -1,4 +1,4 @@
-module github.com/elmyrockers/go-fiberauth
+module github.com/elmyrockers/go-xvelope
 
 go 1.26.5
 
