@@ -17,7 +17,7 @@ Most authentication libraries either force you into heavy server-side session st
 **xvelope** takes a different approach by bringing the robust architecture of **ASP.NET Core Identity** to Go, focusing strictly on statelessness and data privacy.
 
 <div align="center">
-    <img src="img/xvelope-logo.svg" width="500" />
+    <img src="img/xvelope-logo.svg" width="400" />
 </div><br>
 
 ### Core Concepts
