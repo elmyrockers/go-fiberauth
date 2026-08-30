@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 <div align="center">
-    <img src="img/logo.svg" width="900" />
+    <img src="img/xvelope-short-description.svg" width="900" />
 </div><br>
 
 Secure, stateless auth library for Go. AES-256-GCM encrypted cookies and opaque tokens inspired by ASP.NET Core Identity.
@@ -15,6 +15,10 @@ Secure, stateless auth library for Go. AES-256-GCM encrypted cookies and opaque 
 Most authentication libraries either force you into heavy server-side session stores (like Redis) or rely on standard JWTs that expose user claims in plain text to the client. 
 
 **xvelope** takes a different approach by bringing the robust architecture of **ASP.NET Core Identity** to Go, focusing strictly on statelessness and data privacy.
+
+<div align="center">
+    <img src="img/xvelope-logo.svg" width="500" />
+</div><br>
 
 ### Core Concepts
 
