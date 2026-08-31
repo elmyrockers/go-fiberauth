@@ -1,15 +1,17 @@
 package xvelope
 
+// import "github.com/davecgh/go-spew/spew"
 
 type HttpContext interface {
-	SetHttpContext( ctx any )
+	SetContext( ctx any )
 }
 
 type FastHttpContext struct {
 	context any
 }
 
-func (f *FastHttpContext) SetHttpContext( ctx any ){
+func (f *FastHttpContext) SetContext( ctx any ){
+	// spew.Dump( ctx )
 	f.context = ctx
 }
 
@@ -17,6 +19,6 @@ type NetHttpContext struct {
 	context any
 }
 
-func (n *NetHttpContext) SetHttpContext( ctx any ){
+func (n *NetHttpContext) SetContext( ctx any ){
 	n.context = ctx
 }
