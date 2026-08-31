@@ -11,31 +11,30 @@ type contextKey struct{}
 // Unexported key instance (zero memory allocation)
 var authKey = contextKey{}
 
-type Auth struct {
-	context xvelope.HttpContext
-}
-
-// Config is reserved for future options.
-type Config struct{}
-
 // New() creates the auth middleware.
-func New(config ...Config) fiber.Handler {
-	// Create Auth instance
-		auth := &Auth{
-			context: &xvelope.FastHttpContext{},
+func New(config ...xvelope.Config) fiber.Handler {
+	// Resolve config slice
+		var cfg xvelope.Config
+		if len(config) > 0 {
+			cfg = config[0]
 		}
+
+	// Create Auth instance
+		auth := xvelope.New( cfg )
 
 	// Set httpcontext then store auth instance
 		return func(c fiber.Ctx) error {
-			auth.context.SetHttpContext( c.Context() )
-			c.Locals(authKey, auth)
+			httpCtx := &xvelope.FastHttpContext{}
+			httpCtx.SetContext( c.RequestCtx() )
+			auth.SetHttpContext( httpCtx )
 
+			c.Locals(authKey, auth)
 			return c.Next()
 		}
 }
 
 // FromContext(c) retrieves the *Auth instance from Fiber Ctx
-func FromContext(c fiber.Ctx) *Auth {
-	auth, _ := c.Locals(authKey).(*Auth)
+func FromContext(c fiber.Ctx) *xvelope.Auth {
+	auth, _ := c.Locals(authKey).(*xvelope.Auth)
 	return auth
 }
