@@ -1,8 +1,22 @@
 package xvelope
 
 
-type HttpContext interface {}
+type HttpContext interface {
+	SetHttpContext( ctx any )
+}
 
-type FastHttpContext struct {}
+type FastHttpContext struct {
+	context any
+}
 
-type NetHttpContext struct {}
+func (f *FastHttpContext) SetHttpContext( ctx any ){
+	f.context = ctx
+}
+
+type NetHttpContext struct {
+	context any
+}
+
+func (n *NetHttpContext) SetHttpContext( ctx any ){
+	n.context = ctx
+}
