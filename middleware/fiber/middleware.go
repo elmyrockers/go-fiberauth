@@ -28,9 +28,9 @@ func New(config ...xvelope.Config) fiber.Handler {
 			httpCtxCopy := *httpCtx
 			httpCtxCopy.SetContext( c.RequestCtx() )
 			authCopy := *auth
-			authCopy.SetHttpContext( httpCtxCopy )
+			authCopy.SetHttpContext( &httpCtxCopy )
 
-			c.Locals(authKey, authCopy)
+			c.Locals(authKey, &authCopy)
 			return c.Next()
 		}
 }
